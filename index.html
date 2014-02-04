@@ -1,0 +1,58 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+
+		<script type="text/javascript" src="js/dsp.js"></script>
+		<script src="js/jquery-1.11.0.min.js"></script>
+		<script type="text/javascript">
+			var audioBuffer;
+			var audioContext;
+
+			$(document).ready(function() {
+				init();
+
+				function init() {
+					try {
+						// Fix up for prefixing
+						window.AudioContext = window.AudioContext
+								      ||window.webkitAudioContext;
+						 audioContext = new AudioContext();
+					}
+					 catch(e) {
+						alert('Web Audio API is not supported in this browser');
+					}
+					$("#soundIn").change(loadSound);	
+				}				
+				
+				function loadSound() {
+					var file = $("#soundIn").get(0).files[0];
+					var reader = new FileReader();
+					reader.onload = function(e) {
+						var buff = e.target.result;
+						playSound(buff);
+					}				
+					
+					reader.readAsArrayBuffer(file);
+				}
+
+				function playSound(buffer) {
+					var source = audioContext.createBufferSource();
+					source.buffer = audioContext.createBuffer(buffer,false);
+
+					source.connect(audioContext.destination);
+					source.start(0);
+				}
+			});
+
+		
+		</script>
+	</head>
+	<body>
+		<div id="titlediv">
+			SOUND SCENE
+		</div>
+		<div id="inputdiv">
+			<input type="file" id="soundIn" accept="audio/*"></input>
+		</div>	
+	</body>
+</html>

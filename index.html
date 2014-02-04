@@ -5,8 +5,10 @@
 		<script type="text/javascript" src="js/dsp.js"></script>
 		<script src="js/jquery-1.11.0.min.js"></script>
 		<script type="text/javascript">
-			var audioBuffer;
 			var audioContext;
+			var audioSource;
+			var freqDomain;
+			var timeDomain;
 
 			$(document).ready(function() {
 				init();
@@ -24,6 +26,7 @@
 					$("#soundIn").change(loadSound);	
 				}				
 				
+				// load sound from input mp3
 				function loadSound() {
 					var file = $("#soundIn").get(0).files[0];
 					var reader = new FileReader();
@@ -35,12 +38,32 @@
 					reader.readAsArrayBuffer(file);
 				}
 
+				// analyze qualities of the sound
+				function analyzeSound() {
+					// set up the AudioAnalserNode
+					var analyser = audioContext.createAnalyser();
+					audioSource.connect(analyser);
+					
+					// get the frequency domain
+					freqDomain = new Float32Array(analyser.frequencyBinCount);
+					analyser.getFloatFrequencyData(freqDomain);
+				}
+				
+				// gets the value of the inputted frequency
+				function getFrequencyValue(frequency) {
+					var nyquist = audioContext.sampleRate/2;
+					var index = Math.round(frequency/nyquist * freqDomain.length);
+					return freqDomain[index];
+				}
+		
+				// play sound from ArrayBuffer
 				function playSound(buffer) {
-					var source = audioContext.createBufferSource();
-					source.buffer = audioContext.createBuffer(buffer,false);
-
-					source.connect(audioContext.destination);
-					source.start(0);
+					audioSource = audioContext.createBufferSource();
+					audioSource.buffer = audioContext.createBuffer(buffer,false);
+					audioSource.connect(audioContext.destination);
+			
+					analyzeSound();
+					audioSource.start(0);
 				}
 			});
 

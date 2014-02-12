@@ -2,14 +2,17 @@
 <html>
 	<head>
 
-		<script type="text/javascript" src="js/dsp.js"></script>
+		<script type="text/javascript" src="js/pitch.js"></script>
 		<script src="js/jquery-1.11.0.min.js"></script>
 		<script type="text/javascript">
 			var audioContext;
 			var audioSource;
+			var analyser;
 			var freqDomain;
 			var timeDomain;
-
+			var lowpassfilter;
+			var highpassfilter;
+			var bandpassfilter;
 			$(document).ready(function() {
 				init();
 
@@ -23,7 +26,27 @@
 					 catch(e) {
 						alert('Web Audio API is not supported in this browser');
 					}
-					$("#soundIn").change(loadSound);	
+					
+					
+					lowpassfilter = audioContext.createBiquadFilter();
+					lowpassfilter.type = lowpassfilter.LOWPASS;
+					lowpassfilter.frequency.value = 100;
+
+					highpassfilter = audioContext.createBiquadFilter();
+					highpassfilter.type = highpassfilter.HIGHPASS;
+					highpassfilter.frequency.value = 100;
+
+					bandpassfilter = audioContext.createBiquadFilter();
+					bandpassfilter.type = highpassfilter.BANDPASS;
+					bandpassfilter.frequency.value = 100;
+
+					$("#soundIn").change(loadSound);
+					$("#lowpass").change(updateSound);	
+					$("#highpass").change(updateSound);
+					$("#bandpass").change(updateSound);
+					$("#lowpassrange").change(changeFrequency);
+					$("#highpassrange").change(changeFrequency);
+					$("#bandpassrange").change(changeFrequency);
 				}				
 				
 				// load sound from input mp3
@@ -38,15 +61,51 @@
 					reader.readAsArrayBuffer(file);
 				}
 
+
+				
+				function updateSound() {
+					if (audioSource) {
+						audioSource.disconnect(0);	
+
+						lowpassfilter.disconnect(0);
+						highpassfilter.disconnect(0);
+						var source = audioSource;
+		
+						if ($("#lowpass").prop('checked')) {
+							audioSource.connect(lowpassfilter);		
+							source = lowpassfilter;
+						}	
+						if ($("#highpass").prop('checked')) {
+							source.connect(highpassfilter);
+							source = highpassfilter;
+						}
+						
+						if ($("#bandpass").prop('checked')) {
+							source.connect(bandpassfilter);
+							source = bandpassfilter;
+						}
+						source.connect(audioContext.destination);
+					}
+				}
+
 				// analyze qualities of the sound
 				function analyzeSound() {
-					// set up the AudioAnalserNode
-					var analyser = audioContext.createAnalyser();
-					audioSource.connect(analyser);
 					
 					// get the frequency domain
-					freqDomain = new Float32Array(analyser.frequencyBinCount);
-					analyser.getFloatFrequencyData(freqDomain);
+//					freqDomain = new Float32Array(analyser.frequencyBinCount);
+//					analyser.getFloatFrequencyData(freqDomain);
+
+					var timeDomain = new Uint8Array(analyser.frequencyBinCount);
+					analyser.getByteTimeDomainData(timeDomain);
+					console.log("number of samples = " + timeDomain.length);
+					var maxvalue = -1;
+					for (var i = 0; i < timeDomain.length; i++) {
+						if (timeDomain[i] > maxvalue) {
+							maxvalue = timeDomain[i];
+						}	
+
+					}
+					console.log("max value = " + maxvalue);
 				}
 				
 				// gets the value of the inputted frequency
@@ -58,15 +117,58 @@
 		
 				// play sound from ArrayBuffer
 				function playSound(buffer) {
+					// disconnect if there is already a song uploaded
+					if (audioSource) {
+						audioSource.stop();
+						audioSource.disconnect(0);
+					}
+					
 					audioSource = audioContext.createBufferSource();
 					audioSource.buffer = audioContext.createBuffer(buffer,false);
-					audioSource.connect(audioContext.destination);
+					
+					// set up the AudioAnalserNode
+					analyser = audioContext.createAnalyser();
+					audioSource.connect(analyser);
+
+ 					analyser.connect(audioContext.destination);
+ 					audioSource.connect(audioContext.destination);
 			
-					analyzeSound();
+					// analyzeSound();
 					audioSource.start(0);
+				}		
+				
+				function changeFrequency() {
+					 var minValue = 40;
+     					 var maxValue = audioContext.sampleRate / 2;
+
+					 var id = $(this).attr('id');	
+					 var newvalue = $(this).val(); 
+					 console.log("newvalue = " + newvalue);					
+					 var filter;
+					 if (id == "lowpassrange") {
+						filter = lowpassfilter; 
+					}
+					
+					 else if (id == "highpassrange") {
+						filter = highpassfilter; 
+					}	
+
+					else if (id == "bandpassrange") {
+						filter = bandpassfilter;
+					}
+					// Logarithm (base 2) to compute how many octaves fall in the range.
+  					var numberOfOctaves = Math.log(maxValue / minValue) / Math.LN2;
+
+					// Compute a multiplier from 0 to 1 based on an exponential scale.
+ 				 	var multiplier = Math.pow(2, numberOfOctaves * (newvalue - 1.0));
+					//filter.frequency.value = maxValue * multiplier;	
+					filter.frequency.value = newvalue;		
+
+					analyzeSound();
 				}
 			});
-
+			
+		
 		
 		</script>
 	</head>
@@ -77,5 +179,14 @@
 		<div id="inputdiv">
 			<input type="file" id="soundIn" accept="audio/*"></input>
 		</div>	
+		<input type = "checkbox" id = "lowpass" name = ""  > Low pass
+		<input type = "range" id = "lowpassrange" min="100" max="200" value = "100">
+		<br></br>
+		<input type = "checkbox" id = "highpass" name = "" > High pass
+		<input type = "range" id = "highpassrange" min="100" max = "400" value = "100">
+		
+		<br></br>
+		<input type = "checkbox" id = "bandpass" name = "" > Band pass
+		<input type = "range" id = "bandpassrange" min="100" max = "400" >
 	</body>
 </html>

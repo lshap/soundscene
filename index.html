@@ -13,6 +13,10 @@
 			var lowpassfilter;
 			var highpassfilter;
 			var bandpassfilter;
+			var allpassfilter;
+			var peakingfilter;
+			var gainNode;
+
 			$(document).ready(function() {
 				init();
 
@@ -37,16 +41,38 @@
 					highpassfilter.frequency.value = 100;
 
 					bandpassfilter = audioContext.createBiquadFilter();
-					bandpassfilter.type = highpassfilter.BANDPASS;
+					bandpassfilter.type = bandpassfilter.BANDPASS;
 					bandpassfilter.frequency.value = 100;
 
+					allpassfilter = audioContext.createBiquadFilter();
+					allpassfilter.type = allpassfilter.ALLPASS;
+					allpassfilter.frequency.value = 100;
+
+					peakingfilter = audioContext.createBiquadFilter();
+					peakingfilter.type = peakingfilter.PEAKING;
+					peakingfilter.frequency.value = 100;
+
+					gainNode = audioContext.createGainNode();
+				
+				
 					$("#soundIn").change(loadSound);
+
+					// check box listeners
 					$("#lowpass").change(updateSound);	
 					$("#highpass").change(updateSound);
 					$("#bandpass").change(updateSound);
+					$("#allpass").change(updateSound);
+					$("#peaking").change(updateSound);
+					$("#gain").change(updateSound);
+
+
+					// range input listeners
 					$("#lowpassrange").change(changeFrequency);
 					$("#highpassrange").change(changeFrequency);
 					$("#bandpassrange").change(changeFrequency);
+					$("#allpassrange").change(changeFrequency);
+					$("#peakingrange").change(changeFrequency);
+					$("#gainrange").change(changeGain);
 				}				
 				
 				// load sound from input mp3
@@ -65,10 +91,15 @@
 				
 				function updateSound() {
 					if (audioSource) {
+						// disconnect everything
 						audioSource.disconnect(0);	
-
 						lowpassfilter.disconnect(0);
 						highpassfilter.disconnect(0);
+						allpassfilter.disconnect(0);
+						bandpassfilter.disconnect(0);
+						peakingfilter.disconnect(0);
+						gainNode.disconnect(0);
+
 						var source = audioSource;
 		
 						if ($("#lowpass").prop('checked')) {
@@ -84,17 +115,25 @@
 							source.connect(bandpassfilter);
 							source = bandpassfilter;
 						}
+						if ($("#allpass").prop('checked')) {
+							source.connect(allpassfilter);
+							source = allpassfilter;
+						}
+						if ($("#peaking").prop('checked')) {
+							source.connect(peakingfilter);
+							source = peakingfilter;
+						}
+						if ($("#gain").prop('checked')) {
+							source.connect(gainNode);
+							source = gainNode;
+						}
+
 						source.connect(audioContext.destination);
 					}
 				}
 
 				// analyze qualities of the sound
 				function analyzeSound() {
-					
-					// get the frequency domain
-//					freqDomain = new Float32Array(analyser.frequencyBinCount);
-//					analyser.getFloatFrequencyData(freqDomain);
-
 					var timeDomain = new Uint8Array(analyser.frequencyBinCount);
 					analyser.getByteTimeDomainData(timeDomain);
 					console.log("number of samples = " + timeDomain.length);
@@ -156,6 +195,12 @@
 					else if (id == "bandpassrange") {
 						filter = bandpassfilter;
 					}
+					else if (id == "allpassrange") {
+						filter = allpassfilter;
+					}
+					else if (id == "peakingrange") {
+						filter = peakingfilter;
+					}
 					// Logarithm (base 2) to compute how many octaves fall in the range.
   					var numberOfOctaves = Math.log(maxValue / minValue) / Math.LN2;
 
@@ -165,6 +210,10 @@
 					filter.frequency.value = newvalue;		
 
 					analyzeSound();
+				}
+				function changeGain(){
+					console.log("updating gain to " + $("#gainrange").val()); 
+					gainNode.gain.value = $("#gainrange").val();
 				}
 			});
 			
@@ -187,6 +236,15 @@
 		
 		<br></br>
 		<input type = "checkbox" id = "bandpass" name = "" > Band pass
-		<input type = "range" id = "bandpassrange" min="100" max = "400" >
+		<input type = "range" id = "bandpassrange" min="100" max = "400" value="100">
+		<br></br>
+		<input type = "checkbox" id = "allpass" name = "" > All pass
+		<input type = "range" id = "allpassrange" min="100" max = "400" value="100">
+		<br></br>
+		<input type = "checkbox" id = "peaking" name = "" > Peaking
+		<input type = "range" id = "peakingrange" min="100" max = "400" value="100">
+		<br></br>
+		<input type = "checkbox" id = "gain" name = "" > Gain
+		<input type = "range" id = "gainrange" min="0" max = "1" value="0" step="0.01" >
 	</body>
 </html>

@@ -35,7 +35,8 @@
 
 			camera.position.set(0, 300, 500);
 			controls = new THREE.OrbitControls(camera);
-			
+		
+			// draw particles in random positions	
 			for (var i = 0; i < 100; i++) {
 				var particle = new THREE.Sprite( new THREE.SpriteCanvasMaterial({
 								color: Math.random() * 0x808080 + 0x808080, 

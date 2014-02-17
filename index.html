@@ -3,6 +3,7 @@
 	<head>
 
 		<script type="text/javascript" src="js/pitch.js"></script>
+		<script src="https://rawgithub.com/mrdoob/three.js/master/build/three.js"></script>
 		<script src="js/jquery-1.11.0.min.js"></script>
 		<script type="text/javascript">
 			var audioContext;
@@ -16,11 +17,42 @@
 			var allpassfilter;
 			var peakingfilter;
 			var gainNode;
+			var canvas;
+			var ctxt;
+			var GRID_WIDTH = 32;
+			var GRID_HEIGHT = 32;
+			var SAMPLE_MAX = 256;
+			var WIDTH = 400;
+			var HEIGHT = 400;
+			
+			var scene;
+			var camera;
+			var renderer;
 
 			$(document).ready(function() {
+				var circleFill = function(context) {
+					context.beginPath();
+					context.arc(0, 0, 0.5, 0, 2 * Math.PI, true);
+					context.fill();
+				}
+
 				init();
 
 				function init() {
+
+					canvas = document.getElementById('canvas'); 
+					ctxt = canvas.getContext('2d');	
+					canvas.width = WIDTH;
+					canvas.height = HEIGHT;
+
+					/*scene = new THREE.Scene();	
+					camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 10000 );
+
+					camera.position.set(0, 0, 500);
+					renderer = new THREE.CanvasRenderer(canvas);
+					renderer.setSize( window.innerWidth, window.innerHeight );
+					document.body.appendChild( renderer.domElement );*/
+
 					try {
 						// Fix up for prefixing
 						window.AudioContext = window.AudioContext
@@ -31,7 +63,23 @@
 						alert('Web Audio API is not supported in this browser');
 					}
 					
-					
+				/*	var part =new THREE.Sprite( new THREE.SpriteCanvasMaterial({
+								color: 0xff0000, 
+								program: circleFill })); 
+					part.position.x = 200;
+					part.position.y = 200;
+					part.position.z = 200;
+					part.scale.x = part.scale.y = 50;
+					scene.add(part);
+					renderer.render(scene, camera);*/
+				/*	ctxt.fillStyle = '#FF0000';
+					ctxt.beginPath();
+					ctxt.arc(200, 200, 50, 0, 2 * Math.PI, true);
+					ctxt.fill();*/
+					ctxt.strokeRect(0, 0, canvas.width, canvas.height);	
+
+					$('#canvas').css('padding-left', '300px');
+
 					lowpassfilter = audioContext.createBiquadFilter();
 					lowpassfilter.type = lowpassfilter.LOWPASS;
 					lowpassfilter.frequency.value = 100;
@@ -69,10 +117,12 @@
 					// range input listeners
 					$("#lowpassrange").change(changeFrequency);
 					$("#highpassrange").change(changeFrequency);
-					$("#bandpassrange").change(changeFrequency);
+					$("#bandpassrage").change(changeFrequency);
 					$("#allpassrange").change(changeFrequency);
 					$("#peakingrange").change(changeFrequency);
 					$("#gainrange").change(changeGain);
+
+					$('#analyze').click(analyzeSound);
 				}				
 				
 				// load sound from input mp3
@@ -134,17 +184,28 @@
 
 				// analyze qualities of the sound
 				function analyzeSound() {
+					requestAnimationFrame(analyzeSound);
+					ctxt.clearRect(0,0, WIDTH, HEIGHT);
+					console.log('analyzing...');
 					var timeDomain = new Uint8Array(analyser.frequencyBinCount);
 					analyser.getByteTimeDomainData(timeDomain);
-					console.log("number of samples = " + timeDomain.length);
-					var maxvalue = -1;
-					for (var i = 0; i < timeDomain.length; i++) {
-						if (timeDomain[i] > maxvalue) {
-							maxvalue = timeDomain[i];
-						}	
-
+				
+					var freqDomain = new Float32Array(analyser.frequencyBinCount);
+					analyser.getFloatFrequencyData(freqDomain);
+//					console.log(freqDomain);	
+					for (var freq = 0; freq < freqDomain.length; freq++) {
+						var x = freq % GRID_WIDTH * WIDTH/GRID_WIDTH;
+						var y = freq / GRID_WIDTH * HEIGHT/GRID_HEIGHT;
+				
+						var amp = freqDomain[freq];
+						var r = Math.abs(amp/SAMPLE_MAX) * 10;
+						ctxt.fillStyle = '#FF0000';
+						ctxt.beginPath();
+						ctxt.arc(x, y, r, 0, Math.PI * 2);
+						ctxt.fill();
 					}
-					console.log("max value = " + maxvalue);
+				
+					// renderer.render(scene, camera);
 				}
 				
 				// gets the value of the inputted frequency
@@ -171,9 +232,9 @@
 
  					analyser.connect(audioContext.destination);
  					audioSource.connect(audioContext.destination);
-			
-					// analyzeSound();
+			 
 					audioSource.start(0);
+					analyzeSound();
 				}		
 				
 				function changeFrequency() {
@@ -215,6 +276,8 @@
 					console.log("updating gain to " + $("#gainrange").val()); 
 					gainNode.gain.value = $("#gainrange").val();
 				}
+
+
 			});
 			
 		
@@ -228,6 +291,7 @@
 		<div id="inputdiv">
 			<input type="file" id="soundIn" accept="audio/*"></input>
 		</div>	
+		<canvas id="canvas"></canvas>
 		<input type = "checkbox" id = "lowpass" name = ""  > Low pass
 		<input type = "range" id = "lowpassrange" min="100" max="200" value = "100">
 		<br></br>
@@ -246,5 +310,8 @@
 		<br></br>
 		<input type = "checkbox" id = "gain" name = "" > Gain
 		<input type = "range" id = "gainrange" min="0" max = "1" value="0" step="0.01" >
+		<br></br>
+		<button  type="submit" id = "analyze"  >Analyze</button>
+
 	</body>
 </html>

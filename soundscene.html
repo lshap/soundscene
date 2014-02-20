@@ -18,8 +18,9 @@
 			var GRID_WIDTH = 32;
 			var GRID_HEIGHT = 32;
 			var SAMPLE_MAX = 256;
-			var WIDTH = window.innerWidth;
-			var HEIGHT = window.innerHeight;
+			var WIDTH = window.innerWidth * 0.8;
+			var HEIGHT =window.innerHeight * 0.8;
+			var lastAmps;
 
 			function init() {
 				canvas = document.getElementById('canvas'); 
@@ -60,25 +61,28 @@
 				analyser.getByteTimeDomainData(timeDomain);
 			
 				var freqDomain = new Float32Array(analyser.frequencyBinCount);
+
 				analyser.getFloatFrequencyData(freqDomain);
 				for (var freq = 0; freq < freqDomain.length; freq++) {
 					var x = Math.floor(freq % GRID_WIDTH) * WIDTH/GRID_WIDTH + 10;
 					var y = Math.floor(freq / GRID_WIDTH) * HEIGHT/GRID_HEIGHT + 10;
 					var amp = freqDomain[freq];
-					var r = Math.abs(amp/SAMPLE_MAX) * 10;
+					var r = Math.abs(amp/SAMPLE_MAX) * 30;
 
-					var grd = ctxt.createRadialGradient(x, y, r/2, x, y, r);
-					grd.addColorStop(0, "red");	
-					grd.addColorStop(0, "blue");	
-
-		
-					// ctxt.fillStyle = '#FF0000';
-					ctxt.fillStyle = grd;
-
+					var lastamp = lastAmps[freq];
+					var delta = (lastamp - amp);
+					if (delta > 0) {
+						ctxt.fillStyle = 'rgba(255, 255, 0, 0.5)';
+					}
+					else {
+						ctxt.fillStyle = 'rgba(0, 255, 0, 0.3)';
+					}
 					ctxt.beginPath();
 					ctxt.arc(x, y, r, 0, Math.PI * 2);
 					ctxt.fill();
 				}
+
+				lastAmps = freqDomain;
 			}
 
 			// play sound from ArrayBuffer
@@ -104,6 +108,8 @@
 				// set up the AudioAnalserNode
 				analyser = audioContext.createAnalyser();
 				audioSource.connect(analyser);
+
+				lastAmps = new Float32Array(analyser.frequencyBinCount);
 
 				analyser.connect(audioContext.destination);
 				audioSource.connect(audioContext.destination);

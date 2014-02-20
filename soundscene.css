@@ -21,3 +21,10 @@ span {
 	font-size: 30px;
 
 }
+
+#canvas {
+	position:fixed;
+	margin-left:10%;
+	margin-right:10%;
+	margin-top: 5%;
+}

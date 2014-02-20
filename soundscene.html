@@ -21,12 +21,12 @@
 			var WIDTH = window.innerWidth;
 			var HEIGHT = window.innerHeight;
 
-			init();
 			function init() {
 				canvas = document.getElementById('canvas'); 
 				ctxt = canvas.getContext('2d');	
 				canvas.width = WIDTH;
 				canvas.height = HEIGHT;
+				$('#canvas').hide();
 
 				try {
 					// Fix up for prefixing
@@ -42,8 +42,7 @@
 			}
 			
 			// load sound from input mp3
-			function loadSound() {
-				var file = $("#soundIn").get(0).files[0];
+			function loadSound(file) {
 				var reader = new FileReader();
 				reader.onload = function(e) {
 					var buff = e.target.result;
@@ -91,8 +90,17 @@
 				}
 				
 				audioSource = audioContext.createBufferSource();
-				audioSource.buffer = audioContext.createBuffer(buffer,false);
 				
+				try {
+					audioSource.buffer = audioContext.createBuffer(buffer,false);
+				} catch (e) {
+					console.log("error reading sound file");
+					return;
+				}				
+				
+				$('h1').hide();
+				$('#dragDiv').hide();
+				$('#canvas').show();
 				// set up the AudioAnalserNode
 				analyser = audioContext.createAnalyser();
 				audioSource.connect(analyser);
@@ -103,12 +111,30 @@
 				audioSource.start(0);
 				analyzeSound();
 			}		
+			
+			function allowDrop(ev) {
+				console.log('registered drag');
+				ev.preventDefault();
+			}
+			
+			function drop(ev) {
+				ev.preventDefault();
+				var data = ev.dataTransfer.files[0];	
+				if (data) {
+					loadSound(data);
+				}
+			}
 
+			$(document).ready(function() {
+
+				init();
+			});	
 		</script>
 	</head>
 
 	<body>
-		<div id="dragDiv"><span> drag sound here </span></div>
+		<h1>Sound Scene</h1>
+		<div id="dragDiv" ondragover="allowDrop(event)" ondrop="drop(event)"><span> drag sound here </span></div>
 		<canvas id="canvas"></canvas>
 	</body>
 </html>

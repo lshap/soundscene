@@ -1,0 +1,13 @@
+#dragDiv {
+	position:relative;
+	margin-left:40%;
+	margin-right:40%;
+	margin-top:30%;
+	width:300px;
+}
+
+span {
+	font-family: "Helvetica Neue", Arial, sans-serif;
+	font-size: 30px;
+
+}

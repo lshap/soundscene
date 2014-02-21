@@ -8,6 +8,23 @@
 		<script src="https://rawgithub.com/mrdoob/three.js/master/build/three.js"></script>
 		<script src="js/jquery-1.11.0.min.js"></script>
 		<script type="text/javascript">
+			ColorMode = {
+				MONOCHROME: 0,
+				TWOTONE: 1
+			};
+
+			ShapeMode = {
+				CIRCLE: 0,
+				SQUARE: 1,
+				SKEW: 2
+			};
+
+			GridMode = {
+				RIGID: 0,
+				CONCENTRIC: 1
+			};
+
+
 			var audioContext;
 			var audioSource;
 			var analyser;
@@ -21,7 +38,12 @@
 			var WIDTH = window.innerWidth * 0.8;
 			var HEIGHT =window.innerHeight * 0.8;
 			var lastAmps;
+			var frame = 0;
+			var colormode = ColorMode.TWOTONE;
+			var shapemode = ShapeMode.SQUARE;
+			var gridmode = GridMode.RIGID;
 
+	
 			function init() {
 				canvas = document.getElementById('canvas'); 
 				ctxt = canvas.getContext('2d');	
@@ -55,34 +77,85 @@
 
 			function analyzeSound() {
 				requestAnimationFrame(analyzeSound);
-				ctxt.clearRect(0,0, WIDTH, HEIGHT);
-				console.log('analyzing...');
+//				console.log('analyzing...');
+				if (frame % 10 != 0) {
+					frame ++;
+					return;
+				}
 				var timeDomain = new Uint8Array(analyser.frequencyBinCount);
 				analyser.getByteTimeDomainData(timeDomain);
 			
 				var freqDomain = new Float32Array(analyser.frequencyBinCount);
 
 				analyser.getFloatFrequencyData(freqDomain);
+				ctxt.clearRect(0,0, WIDTH, HEIGHT);
 				for (var freq = 0; freq < freqDomain.length; freq++) {
-					var x = Math.floor(freq % GRID_WIDTH) * WIDTH/GRID_WIDTH + 10;
-					var y = Math.floor(freq / GRID_WIDTH) * HEIGHT/GRID_HEIGHT + 10;
+					var x, y, r;
 					var amp = freqDomain[freq];
-					var r = Math.abs(amp/SAMPLE_MAX) * 30;
 
+					switch(gridmode) {
+						case GridMode.RIGID:
+							x = Math.floor(freq % GRID_WIDTH) * WIDTH/GRID_WIDTH + 10;
+							y = Math.floor(freq / GRID_WIDTH) * HEIGHT/GRID_HEIGHT + 10;
+							r = Math.abs(amp/SAMPLE_MAX) * 30;	
+						break;
+						case GridMode.CONCENTRIC:
+							x = WIDTH/2;
+							y = HEIGHT/2;
+							r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * WIDTH/4; 
+						break;
+						default:
+							x = Math.floor(freq % GRID_WIDTH) * WIDTH/GRID_WIDTH + 10;
+							y = Math.floor(freq / GRID_WIDTH) * HEIGHT/GRID_HEIGHT + 10;
+							r = Math.abs(amp/SAMPLE_MAX) * 30;	
+					}
+
+					
 					var lastamp = lastAmps[freq];
 					var delta = (lastamp - amp);
-					if (delta > 0) {
-						ctxt.fillStyle = 'rgba(255, 255, 0, 0.5)';
+					
+					switch (colormode) {
+						case ColorMode.MONOCHROMATIC:
+							ctxt.fillStyle = 'rgba(0, 255, 0,' + r/30 * 0.9 + ')';
+						break;					
+						case ColorMode.TWOTONE:
+							if (delta > 1) {
+								ctxt.fillStyle = 'rgba(255 ,255, 0,' + r/30 * 0.9 + ')';
+							}
+							else {
+								ctxt.fillStyle = 'rgba(0, 255, 0,' + r/30 * 0.9 + ')';
+							}
+						break;					
+						default:
+							ctxt.fillStyle = 'rgba(0, 255, 0,' + r/30 * 0.9 + ')';
 					}
-					else {
-						ctxt.fillStyle = 'rgba(0, 255, 0, 0.3)';
+
+					switch (shapemode) {
+						case ShapeMode.CIRCLE:
+							ctxt.beginPath();
+							ctxt.arc(x, y, r, 0, Math.PI * 2);
+							ctxt.fill();
+						break;	
+						case ShapeMode.SQUARE:
+							ctxt.beginPath();
+							ctxt.rotate(frame % 2 * Math.PI);
+							ctxt.rect(x - r, y-r, r * 2, r * 2);
+							ctxt.fill();
+						break;	
+						case ShapeMode.SKEW:
+							ctxt.beginPath();
+							ctxt.arc(x, y, r, 0, Math.PI * 2);
+							ctxt.fill();
+						break;	
+						default:
+							ctxt.beginPath();
+							ctxt.arc(x, y, r, 0, Math.PI * 2);
+							ctxt.fill();
 					}
-					ctxt.beginPath();
-					ctxt.arc(x, y, r, 0, Math.PI * 2);
-					ctxt.fill();
 				}
 
 				lastAmps = freqDomain;
+				frame++;
 			}
 
 			// play sound from ArrayBuffer
@@ -119,7 +192,7 @@
 			}		
 			
 			function allowDrop(ev) {
-				console.log('registered drag');
+//				console.log('registered drag');
 				ev.preventDefault();
 			}
 			

@@ -10,7 +10,8 @@
 		<script type="text/javascript">
 			ColorMode = {
 				MONOCHROME: 0,
-				TWOTONE: 1
+				TWOTONE: 1,
+				GRADIENT: 2
 			};
 
 			ShapeMode = {
@@ -21,7 +22,12 @@
 
 			GridMode = {
 				RIGID: 0,
-				CONCENTRIC: 1
+				CONCENTRIC: 1,
+				RANDOM: 2,
+				SPIRAL: 3,
+				REVERSESPIRAL: 4,
+				BUTTERFLY:5,
+				ASTROID:6
 			};
 
 
@@ -40,8 +46,8 @@
 			var lastAmps;
 			var frame = 0;
 			var colormode = ColorMode.TWOTONE;
-			var shapemode = ShapeMode.SQUARE;
-			var gridmode = GridMode.RIGID;
+			var shapemode = ShapeMode.CIRCLE;
+			var gridmode = GridMode.ASTROID;
 
 	
 			function init() {
@@ -49,6 +55,7 @@
 				ctxt = canvas.getContext('2d');	
 				canvas.width = WIDTH;
 				canvas.height = HEIGHT;
+				console.log('width = ' + WIDTH + 'height = ' + HEIGHT);
 				$('#canvas').hide();
 
 				try {
@@ -78,13 +85,22 @@
 			function analyzeSound() {
 				requestAnimationFrame(analyzeSound);
 //				console.log('analyzing...');
-				if (frame % 10 != 0) {
+				if (frame % 10 != 0 && colormode != ColorMode.MONOTONE) {
 					frame ++;
 					return;
 				}
 				var timeDomain = new Uint8Array(analyser.frequencyBinCount);
 				analyser.getByteTimeDomainData(timeDomain);
 			
+				var max = 0;
+			/*	for (var i = 0; i < timeDomain.length; i++) {
+					if (timeDomain[i] > max) {
+						max = timeDomain[i];
+					}
+				}
+
+				console.log('max = ' + max);*/
+	
 				var freqDomain = new Float32Array(analyser.frequencyBinCount);
 
 				analyser.getFloatFrequencyData(freqDomain);
@@ -104,6 +120,37 @@
 							y = HEIGHT/2;
 							r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * WIDTH/4; 
 						break;
+						case GridMode.RANDOM:
+							x = Math.random() * WIDTH;
+							y = Math.random() * HEIGHT;
+							r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * 50; 
+						break;
+						case GridMode.SPIRAL:
+							x = 0.2 * freq * Math.cos(freq) + WIDTH/2; 
+							y =  0.2 * freq * Math.sin(freq) + HEIGHT/2;
+							r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * 50; 
+						break;
+						case GridMode.REVERSESPIRAL:
+							var rev = 1024 - freq;
+							x = 0.3 * rev * Math.cos(rev) + WIDTH/2; 
+							y =  0.3 * rev * Math.sin(rev) + HEIGHT/2;
+							r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * 50; 
+						break;
+						case GridMode.BUTTERFLY:
+							var cosf = Math.cos(freq);
+							var sinf12 = Math.sin(freq/12);
+							var ecosf = Math.pow(Math.E, cosf);
+							var mult = (ecosf - 2 * Math.cos(4 * freq) - Math.pow(sinf12, 5));
+
+							x = 70 * Math.sin(freq) * mult + WIDTH/2;
+							y = 50 * Math.cos(freq) * mult + HEIGHT/2;
+							r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * 50; 
+						break;
+						case GridMode.ASTROID:
+							x = 300 *(freq/1024)* Math.pow(Math.cos(freq), 3) + WIDTH/2 ;
+							y = 200 *(freq/1024)* Math.pow(Math.sin(freq), 3) + HEIGHT/2;
+							r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * 50; 
+						break;
 						default:
 							x = Math.floor(freq % GRID_WIDTH) * WIDTH/GRID_WIDTH + 10;
 							y = Math.floor(freq / GRID_WIDTH) * HEIGHT/GRID_HEIGHT + 10;
@@ -120,12 +167,16 @@
 						break;					
 						case ColorMode.TWOTONE:
 							if (delta > 1) {
-								ctxt.fillStyle = 'rgba(255 ,255, 0,' + r/30 * 0.9 + ')';
+								ctxt.fillStyle = 'rgba(0 ,0, 255,' + r/30 * 0.9 + ')';
 							}
 							else {
 								ctxt.fillStyle = 'rgba(0, 255, 0,' + r/30 * 0.9 + ')';
 							}
 						break;					
+						case ColorMode.GRADIENT:
+								
+							ctxt.fillStyle = 'rga(' + + ' , ' +  +  ' , ' + +  ' , ' + r/30 * 0.9 + ')';
+						break;
 						default:
 							ctxt.fillStyle = 'rgba(0, 255, 0,' + r/30 * 0.9 + ')';
 					}

@@ -11,7 +11,9 @@
 			ColorMode = {
 				MONOCHROME: 0,
 				TWOTONE: 1,
-				GRADIENT: 2
+				THREETONE: 2,
+				GRADIENT: 3,
+				RANDOM: 4
 			};
 
 			ShapeMode = {
@@ -27,7 +29,10 @@
 				SPIRAL: 3,
 				REVERSESPIRAL: 4,
 				BUTTERFLY:5,
-				ASTROID:6
+				ASTROID:6,
+				EPICYCLOID:7,
+				REVERSEEPIC:8,
+				HYPOTROCHOID: 9,
 			};
 
 
@@ -45,11 +50,10 @@
 			var HEIGHT =window.innerHeight * 0.8;
 			var lastAmps;
 			var frame = 0;
-			var colormode = ColorMode.TWOTONE;
+			var colormode = ColorMode.THREETONE;
 			var shapemode = ShapeMode.CIRCLE;
-			var gridmode = GridMode.ASTROID;
+			var gridmode = GridMode.SPIRAL;
 
-	
 			function init() {
 				canvas = document.getElementById('canvas'); 
 				ctxt = canvas.getContext('2d');	
@@ -108,7 +112,7 @@
 				for (var freq = 0; freq < freqDomain.length; freq++) {
 					var x, y, r;
 					var amp = freqDomain[freq];
-
+	
 					switch(gridmode) {
 						case GridMode.RIGID:
 							x = Math.floor(freq % GRID_WIDTH) * WIDTH/GRID_WIDTH + 10;
@@ -148,7 +152,31 @@
 						break;
 						case GridMode.ASTROID:
 							x = 300 *(freq/1024)* Math.pow(Math.cos(freq), 3) + WIDTH/2 ;
-							y = 200 *(freq/1024)* Math.pow(Math.sin(freq), 3) + HEIGHT/2;
+							y = 240 *(freq/1024)* Math.pow(Math.sin(freq), 3) + HEIGHT/2;
+							r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * 50; 
+						break;
+						case GridMode.EPICYCLOID:
+							var a = freq/1024 * 200;
+							var b = a/7; 
+							x = (a + b) * Math.cos(freq) - b * Math.cos((a / b + 1)*freq) + WIDTH/2;
+							y = (a + b) * Math.sin(freq) - b * Math.sin((a / b + 1)*freq) + HEIGHT/2;
+							r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * 50; 
+						break;
+						case GridMode.REVERSEEPIC:
+							var rev = 1024 - freq;
+							var a = rev/1024 * 200;
+							var b = a/7; 
+							var c = 100;
+							x = (a + b) * Math.cos(rev) - b * Math.cos((a / b + 1)*rev) + WIDTH/2;
+							y = (a + b) * Math.sin(rev) - b * Math.sin((a / b + 1)*rev) + HEIGHT/2;
+							r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * 50; 
+						break;
+						case GridMode.HYPOTROCHOID:
+							var a = freq/1024 * 200;
+							var b = a/7; 
+							var c = 150;
+							x = (a - b) * Math.cos(freq) - c * Math.cos((a / b - 1)*freq) + WIDTH/2;
+							y = (a - b) * Math.sin(freq) - c * Math.sin((a / b - 1)*freq) + HEIGHT/2;
 							r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * 50; 
 						break;
 						default:
@@ -162,7 +190,7 @@
 					var delta = (lastamp - amp);
 					
 					switch (colormode) {
-						case ColorMode.MONOCHROMATIC:
+						case ColorMode.MONOCHROME:
 							ctxt.fillStyle = 'rgba(0, 255, 0,' + r/30 * 0.9 + ')';
 						break;					
 						case ColorMode.TWOTONE:
@@ -173,10 +201,29 @@
 								ctxt.fillStyle = 'rgba(0, 255, 0,' + r/30 * 0.9 + ')';
 							}
 						break;					
+						case ColorMode.THREETONE:
+							if (delta > 1) {
+								ctxt.fillStyle = 'rgba(0 ,0, 255,' + r/30 * 0.9 + ')';
+							}
+							else if (delta < -1) {
+								ctxt.fillStyle = 'rgba(255, 255, 0,' + r/30 * 0.9 + ')';
+							}
+							else {
+								ctxt.fillStyle = 'rgba(0, 255, 0,' + r/30 * 0.9 + ')';
+
+							}
+						break;					
 						case ColorMode.GRADIENT:
-								
-							ctxt.fillStyle = 'rga(' + + ' , ' +  +  ' , ' + +  ' , ' + r/30 * 0.9 + ')';
+							ctxt.fillStyle = 'rgba(' + + ' , ' +  +  ' , ' + +  ' , ' + r/30 * 0.9 + ')';
 						break;
+						case ColorMode.RANDOM:
+							var red = Math.random() * 255;
+							var green= Math.random() * 255;
+							var blue = Math.random() * 255;
+							var a = r/30 * 0.9;	
+						//	ctxt.fillStyle = 'rgba(' + red + ',' + green + ',' + blue + ', 1)';
+							ctxt.fillStyle = 'rgba('+ red + ','+ green + ',' + blue + ',' + r/30 * 0.9 + ')';
+							break;	
 						default:
 							ctxt.fillStyle = 'rgba(0, 255, 0,' + r/30 * 0.9 + ')';
 					}
@@ -229,6 +276,9 @@
 				$('h1').hide();
 				$('#dragDiv').hide();
 				$('#canvas').show();
+				$('#controls').hide();	
+				console.log('colormode = ' + colormode);
+				console.log('gridmode = ' + gridmode);
 				// set up the AudioAnalserNode
 				analyser = audioContext.createAnalyser();
 				audioSource.connect(analyser);
@@ -258,6 +308,16 @@
 			$(document).ready(function() {
 
 				init();
+
+			$(".colormode").change(function () {
+				colormode = parseInt(this.value);
+				console.log('colormode = ' + colormode);
+			});
+
+			$('.gridmode').change(function () {
+				gridmode = parseInt(this.value);
+				console.log('gridmode = ' + gridmode);
+			});
 			});	
 		</script>
 	</head>
@@ -266,5 +326,36 @@
 		<h1>Sound Scene</h1>
 		<div id="dragDiv" ondragover="allowDrop(event)" ondrop="drop(event)"><span> drag sound here </span></div>
 		<canvas id="canvas"></canvas>
-	</body>
+
+		<div id='controls'>
+		<p>Color Mode: </p>
+		<input type='radio' class='colormode' name='colormode' value='0'> MONOCHROME </input>
+		<br></br>
+		<input type='radio' class='colormode' name='colormode' value='1'> TWOTONE </input>
+		<br></br>
+		<input type='radio' class='colormode'  name='colormode' value='2'> THREETONE </input>
+
+		<p>Grid Mode: </p>
+		<input type='radio'  class='gridmode' name='gridmode' value='0'> RIGID </input>
+		<br></br>
+		<input type='radio'  class='gridmode'  name='gridmode' value='1'> CONCENTRIC </input>
+		<br></br>
+		<input type='radio'  class='gridmode'   name='gridmode' value='2'> RANDOM </input>
+		<br></br>
+		<input type='radio'  class='gridmode'  name='gridmode' value='3'> SPIRAL </input>
+		<br></br>
+		<input type='radio'  class='gridmode'  name='gridmode' value='4'> REVERSE SPIRAL </input>
+		<br></br>
+		<input type='radio'  class='gridmode'   name='gridmode' value='5'> BUTTERFLY </input>
+		<br></br>
+		<input type='radio'  class='gridmode'  name='gridmode' value='6'> ASTROID </input>
+		<br></br>
+		<input type='radio'  class='gridmode'  name='gridmode' value='7'> EPICYCLOID </input>
+		<br></br>
+		<input type='radio'  class='gridmode'   name='gridmode' value='8'> REVERSE EPICYCLOID </input>
+		<br></br>
+		<input type='radio'  class='gridmode'  name='gridmode' value='9'> HYPOTROCHOID </input>
+		<br></br>
+		</div>
+</body>
 </html>

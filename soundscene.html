@@ -53,6 +53,7 @@
 			var colormode = ColorMode.THREETONE;
 			var shapemode = ShapeMode.CIRCLE;
 			var gridmode = GridMode.SPIRAL;
+			var interp = 0;
 
 			function init() {
 				canvas = document.getElementById('canvas'); 
@@ -61,6 +62,7 @@
 				canvas.height = HEIGHT;
 				console.log('width = ' + WIDTH + 'height = ' + HEIGHT);
 				$('#canvas').hide();
+				$('#wavedistortion').hide();
 
 				try {
 					// Fix up for prefixing
@@ -157,9 +159,15 @@
 						break;
 						case GridMode.EPICYCLOID:
 							var a = freq/1024 * 200;
+							var rev = 1024 - freq;
 							var b = a/7; 
-							x = (a + b) * Math.cos(freq) - b * Math.cos((a / b + 1)*freq) + WIDTH/2;
-							y = (a + b) * Math.sin(freq) - b * Math.sin((a / b + 1)*freq) + HEIGHT/2;
+							var revx =  (a + b) * Math.cos(rev) - b * Math.cos((a / b + 1)*rev);
+							var revy =  (a + b) * Math.sin(rev) - b * Math.sin((a / b + 1)*rev);
+							
+							x = (1- interp) * (a + b) * Math.cos(freq) - b * Math.cos((a / b + 1)*freq) +
+							    interp * revx + WIDTH/2;
+							y = ((1- interp) * a + b) * Math.sin(freq) - b * Math.sin((a / b + 1)*freq) + 
+							    interp * revy + HEIGHT/2;
 							r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * 50; 
 						break;
 						case GridMode.REVERSEEPIC:
@@ -276,6 +284,7 @@
 				$('h1').hide();
 				$('#dragDiv').hide();
 				$('#canvas').show();
+				$('#wavedistortion').show();
 				$('#controls').hide();	
 				console.log('colormode = ' + colormode);
 				console.log('gridmode = ' + gridmode);
@@ -318,6 +327,15 @@
 				gridmode = parseInt(this.value);
 				console.log('gridmode = ' + gridmode);
 			});
+			$('.shapemode').change(function () {
+				shapemode = parseInt(this.value);
+				console.log('shapemode = ' + shapemode);
+			});
+			$('#wavedistortion').change(function () {
+				interp = $(this).val();
+				console.log(this);
+				console.log('interp updated to ' + interp);
+			});
 			});	
 		</script>
 	</head>
@@ -325,9 +343,16 @@
 	<body>
 		<h1>Sound Scene</h1>
 		<div id="dragDiv" ondragover="allowDrop(event)" ondrop="drop(event)"><span> drag sound here </span></div>
+		<input type ='range' id='wavedistortion' name = "distortion" min="0" max ="1" step = "0.01" value="0">DISTORT</input>
 		<canvas id="canvas"></canvas>
 
 		<div id='controls'>
+		<p>//TEMPORARY CONTROLS</p>
+		<p>Shape Mode: </p>
+		<input type='radio' class='shapemode' name='shapemode' value='0'> CIRCLE </input>
+		<br></br>
+		<input type='radio' class='shapemode' name='shapemode' value='1'> SQUARE </input>
+		<br></br>
 		<p>Color Mode: </p>
 		<input type='radio' class='colormode' name='colormode' value='0'> MONOCHROME </input>
 		<br></br>

@@ -70,7 +70,11 @@
 			var oscillators = [];
 			var reversed = false;
 			var whiteNoise;
-		
+			var deletedFilter = false;
+	
+			var mousedownx;
+			var mousedowny;
+				
 			var sceneDisplayed = false;			
 			var drawing = false;
 			var drawingFilter = false;
@@ -565,8 +569,8 @@
 					}
 	
 					filter.frequency.value = freq;
-//					filter.Q.value = 1 / newfilter.r;
-					filter.Q.value = 0.0001;
+					filter.Q.value = 1 / newfilter.r;
+				//	filter.Q.value = 0.0001;
 					filters.push(filter);
 					console.log("added filter with value = " + freq + " and Q = " + filter.Q.value);
 					applyEffects();
@@ -650,6 +654,9 @@
 				}
 			});
 			$("#canvas").mousedown(function (event) {
+				mousedownx = event.pageX;
+				mousedowny = event.pageY;
+
 				if (drawmode == DrawMode.PEN) {
 					drawing = true;
 					var nextline = [];
@@ -693,7 +700,7 @@
 			});	
 
 
-			$("#canvas").click(function (event) {
+		/*	$("#canvas").click(function (event) {
 				if (drawmode != DrawMode.PEN) {
 					var offsetX = $(this).offset().left;
 					var offsetY = $(this).offset().top;
@@ -704,18 +711,25 @@
 						var yc = nextfilter.y;
 						var x = event.pageX - offsetX;
 						var y = event.pageY - offsetY;
+
 						if (Math.sqrt(Math.pow(xc - x, 2) + Math.pow(yc - y, 2)) < nextfilter.r) {
 							filterShapes.splice(i, 1); // remove this filter
+						//	console.log("filter shapes after click ");
+						//	console.log(filterShapes);
+							console.log('removed filter shape at position ' + i);
 							filters.splice(i, 1);
+							console.log('removed filter at position ' + i);
 							applyEffects();
 							break;
 						}
 					}
 				}
 
-			});				
+			});*/				
 
 			$("#canvas").mouseup(function (event) {
+				var dist = Math.sqrt(Math.pow(event.pageX - mousedownx, 2) + Math.pow(event.pageY - mousedowny, 2));
+				console.log("dist = " + dist);
 				if (drawmode == DrawMode.PEN) {
 					drawing = false;
 	
@@ -726,15 +740,51 @@
 					}
 					
 				}
+			
+				else if (dist < 0.001) {
+					if (drawmode == DrawMode.FILTER) {
+						filterShapes.splice(filterShapes.length - 1, 1); 
+						drawingFilter = false;
+						console.log('set filter false');
+					}
+
+					var offsetX = $(this).offset().left;
+					var offsetY = $(this).offset().top;
+
+					for (var i = 0; i < filterShapes.length; i++) {
+						var nextfilter = filterShapes[i];
+						var xc = nextfilter.x;
+						var yc = nextfilter.y;
+						var x = event.pageX - offsetX;
+						var y = event.pageY - offsetY;
+
+						if (Math.sqrt(Math.pow(xc - x, 2) + Math.pow(yc - y, 2)) < nextfilter.r) {
+							filterShapes.splice(i, 1); // remove this filter
+							console.log("filter shapes after click ");
+							console.log(filterShapes);
+							console.log('removed filter shape at position ' + i);
+							filters.splice(i, 1);
+							console.log('removed filter at position ' + i);
+							applyEffects();
+							break;
+						}
+					}
+				}
+
 				else if (drawmode == DrawMode.FILTER) {
 					drawingFilter = false;
 
 					// add a sound filter
 					if (filterShapes.length > 0) {
+					//	console.log("filtershapes after mouseup" );
+					//	console.log(filterShapes);
 						var newfilter = filterShapes[filterShapes.length - 1];
 						addFilter(newfilter);	
 					}
+
+					deletedFilter = false;
 				}
+				
 			});
 	
 			$(".color").spectrum({showInput:true});

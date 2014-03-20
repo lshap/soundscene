@@ -5,8 +5,12 @@
 
 		<link rel="stylesheet" type="text/css" href="soundscene.css"/>
 		<script type="text/javascript" src="js/pitch.js"></script>
-		<script src="https://rawgithub.com/mrdoob/three.js/master/build/three.js"></script>
 		<script src="js/jquery-1.11.0.min.js"></script>
+		<script src="js/jquery-ui-1.10.4.custom.min.js"></script>
+		<script src='js/spectrum.js'></script>
+		<link rel='stylesheet' href='spectrum.css' />
+		<link rel='stylesheet' href='bootstrap.css'>
+		<link rel='stylesheet' href='jquery-ui-1.10.4.custom.min.css'>
 		<script type="text/javascript">
 			ColorMode = {
 				MONOCHROME: 0,
@@ -34,7 +38,12 @@
 				REVERSEEPIC:8,
 				HYPOTROCHOID: 9,
 			};
-
+			
+			DrawMode = {
+				PEN:0,
+				FILTER:1,
+				NONE:2
+			};
 
 			var audioContext;
 			var audioSource;
@@ -53,17 +62,34 @@
 			var colormode = ColorMode.THREETONE;
 			var shapemode = ShapeMode.CIRCLE;
 			var gridmode = GridMode.SPIRAL;
+			var drawmode = 2;
 			var interp = 0;
+			var filterShapes = []; 
+		
+			var sceneDisplayed = false;			
+			var drawing = false;
+			var drawingFilter = false;
+			var noiseLines = [];	
 
+			var color1 = "#0000ff";
+			var color2 = "#ffff00";
+			var color3 = "#00ff00"
+			var spacing = 1; // number between 1 and 2
+			var logged = false;
+	
 			function init() {
 				canvas = document.getElementById('canvas'); 
 				ctxt = canvas.getContext('2d');	
 				canvas.width = WIDTH;
 				canvas.height = HEIGHT;
 				console.log('width = ' + WIDTH + 'height = ' + HEIGHT);
+				$('#controls').hide();
 				$('#canvas').hide();
-				$('#wavedistortion').hide();
+				$('#menu').hide();
 
+				$("#wavedistortion").slider({max:4, min:0, slide:wavedistortionChange, step:0.2});
+				$("#playbackspeed").slider({min:1, max:2, slide:playbackspeedChange, step: 0.1});
+				$('.slider').hide();
 				try {
 					// Fix up for prefixing
 					window.AudioContext = window.AudioContext
@@ -86,6 +112,19 @@
 				}				
 				
 				reader.readAsArrayBuffer(file);
+			}
+
+
+			function hexStringToRGBA(color, r) {
+				var hexstring = "0x" + color.substring(1);
+				var numval = parseInt(hexstring, 16);		
+				var red = (numval >> 16);
+				var green = (numval >> 8) & 0x0000FF;
+				var blue = numval & 0x0000FF;
+				var rgba = "rgba(" + red + " , " + green + 
+							" , " + blue  + "," + (30-r)/30 * 0.9 + ")";
+			
+				return rgba;
 			}
 
 			function analyzeSound() {
@@ -114,8 +153,69 @@
 				for (var freq = 0; freq < freqDomain.length; freq++) {
 					var x, y, r;
 					var amp = freqDomain[freq];
+
+					// interpolate between spiral and reverse spiral
+					r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * 50; 
+
+					if (interp <= 1) {	
+						var sx = 0.2 * freq * Math.cos(freq); 
+						var sy = 0.2 * freq * Math.sin(freq); 
+						
+						var rev = 1024 - freq;
+						var rx =  0.3 * rev * Math.cos(rev);
+						var ry =  0.3 * rev * Math.sin(rev);
+
+						x = (1 - interp) * sx + interp * rx;
+						y = (1 - interp) * sy + interp * ry;
+					}
+					else if (interp <= 2) { // rev spiral and epicycloid
+						var rev = 1024 - freq;
+						var rx =  0.3 * rev * Math.cos(rev);
+						var ry =  0.3 * rev * Math.sin(rev);
+
+						var a = freq/1024 * 200;
+						var b = a / 7;
+						var ex = (a + b) * Math.cos(freq) - b * Math.cos((a / b + 1)*freq); 
+						var ey = (a + b) * Math.sin(freq) - b * Math.sin((a / b + 1)*freq);
+
+						var i = interp - 1;
+						x = (1 - i) * rx + i * ex;
+						y = (1 - i) * ry + i * ey;
+ 					} 
+					else if (interp <= 3) { // epicycloid and reverse epi
+						var rev = 1024 - freq;
+						var a = freq/1024 * 200;
+						var b = a / 7;
+						var ex = (a + b) * Math.cos(freq) - b * Math.cos((a / b + 1)*freq); 
+						var ey = (a + b) * Math.sin(freq) - b * Math.sin((a / b + 1)*freq);
+
+						var rex = (a + b) * Math.cos(rev) - b * Math.cos((a / b + 1)*rev); 
+						var rey = (a + b) * Math.sin(rev) - b * Math.sin((a / b + 1)*rev);
+
+						var i = interp - 2;
+						x = (1 - i) * ex + i * rex;
+						y = (1 - i) * ey + i * rey;
+					} 
+					else { // rev epi and hyp
+						var a = freq/1024 * 200;
+						var b = a / 7;
+						var rev = 1024 -freq;
+						var rex = (a + b) * Math.cos(rev) - b * Math.cos((a / b + 1)*rev); 
+						var rey = (a + b) * Math.sin(rev) - b * Math.sin((a / b + 1)*rev);
+
+						var c = 150;
+						var hx = (a - b) * Math.cos(freq) - c * Math.cos((a / b - 1)*freq);
+						var hy = (a - b) * Math.sin(freq) - c * Math.sin((a / b - 1)*freq);
+
+						var i = interp - 3;
+						x = (1 - i) * rex + i * hx;
+						y = (1 - i) * rey + i * hy;
+					} 
 	
-					switch(gridmode) {
+					x = x * spacing + WIDTH/2;
+					y = y * spacing + HEIGHT/2;
+					
+					/*switch(gridmode) {
 						case GridMode.RIGID:
 							x = Math.floor(freq % GRID_WIDTH) * WIDTH/GRID_WIDTH + 10;
 							y = Math.floor(freq / GRID_WIDTH) * HEIGHT/GRID_HEIGHT + 10;
@@ -132,8 +232,8 @@
 							r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * 50; 
 						break;
 						case GridMode.SPIRAL:
-							x = 0.2 * freq * Math.cos(freq) + WIDTH/2; 
-							y =  0.2 * freq * Math.sin(freq) + HEIGHT/2;
+							x = 0.2 * spacing * freq * Math.cos(freq) + WIDTH/2; 
+							y =  0.2 * spacing * freq * Math.sin(freq) + HEIGHT/2;
 							r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * 50; 
 						break;
 						case GridMode.REVERSESPIRAL:
@@ -166,7 +266,7 @@
 							
 							x = (1- interp) * (a + b) * Math.cos(freq) - b * Math.cos((a / b + 1)*freq) +
 							    interp * revx + WIDTH/2;
-							y = ((1- interp) * a + b) * Math.sin(freq) - b * Math.sin((a / b + 1)*freq) + 
+							y = (1- interp) * (a + b) * Math.sin(freq) - b * Math.sin((a / b + 1)*freq) + 
 							    interp * revy + HEIGHT/2;
 							r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * 50; 
 						break;
@@ -191,7 +291,7 @@
 							x = Math.floor(freq % GRID_WIDTH) * WIDTH/GRID_WIDTH + 10;
 							y = Math.floor(freq / GRID_WIDTH) * HEIGHT/GRID_HEIGHT + 10;
 							r = Math.abs(amp/SAMPLE_MAX) * 30;	
-					}
+					}*/
 
 					
 					var lastamp = lastAmps[freq];
@@ -211,14 +311,13 @@
 						break;					
 						case ColorMode.THREETONE:
 							if (delta > 1) {
-								ctxt.fillStyle = 'rgba(0 ,0, 255,' + r/30 * 0.9 + ')';
+								ctxt.fillStyle = hexStringToRGBA(color1, r);
 							}
 							else if (delta < -1) {
-								ctxt.fillStyle = 'rgba(255, 255, 0,' + r/30 * 0.9 + ')';
+								ctxt.fillStyle = hexStringToRGBA(color2, r);
 							}
 							else {
-								ctxt.fillStyle = 'rgba(0, 255, 0,' + r/30 * 0.9 + ')';
-
+								ctxt.fillStyle = hexStringToRGBA(color3, r);
 							}
 						break;					
 						case ColorMode.GRADIENT:
@@ -229,7 +328,6 @@
 							var green= Math.random() * 255;
 							var blue = Math.random() * 255;
 							var a = r/30 * 0.9;	
-						//	ctxt.fillStyle = 'rgba(' + red + ',' + green + ',' + blue + ', 1)';
 							ctxt.fillStyle = 'rgba('+ red + ','+ green + ',' + blue + ',' + r/30 * 0.9 + ')';
 							break;	
 						default:
@@ -260,8 +358,43 @@
 					}
 				}
 
+				drawLines();
+				drawFilters();			
+	
 				lastAmps = freqDomain;
 				frame++;
+			}
+
+			function drawLines() {
+				ctxt.strokeStyle = "#000000";
+				for (var i = 0; i < noiseLines.length; i++) {
+
+					if (noiseLines[i].length > 0 ) { 
+						var start = noiseLines[i][0];
+						ctxt.moveTo(start.x, start.y);	
+						
+						for (var j = 1; j < noiseLines[i].length; j++) {
+							var next = noiseLines[i][j];
+							ctxt.lineTo(next.x, next.y);
+						}	
+					
+						ctxt.stroke();
+					}
+
+				}
+
+				ctxt.strokeStyle = "#FFFFFF";
+			}
+
+
+			function drawFilters() {
+				ctxt.fillStyle = 'rgba(255, 255, 255, 0.8)'; 
+				for (var i = 0; i < filterShapes.length; i++) {
+					var nextfilter = filterShapes[i];
+					ctxt.beginPath();
+					ctxt.arc(nextfilter.x, nextfilter.y, nextfilter.r, 0, Math.PI * 2);
+					ctxt.fill();
+				}
 			}
 
 			// play sound from ArrayBuffer
@@ -284,7 +417,8 @@
 				$('h1').hide();
 				$('#dragDiv').hide();
 				$('#canvas').show();
-				$('#wavedistortion').show();
+				sceneDisplayed = true;
+				$('.slider').show();
 				$('#controls').hide();	
 				console.log('colormode = ' + colormode);
 				console.log('gridmode = ' + gridmode);
@@ -314,9 +448,17 @@
 				}
 			}
 
-			$(document).ready(function() {
+			function wavedistortionChange(event, ui) {
+				interp = ui.value;
+			}
 
+			function playbackspeedChange(event, ui) {
+				spacing = ui.value;
+			}
+
+			$(document).ready(function() {
 				init();
+
 
 			$(".colormode").change(function () {
 				colormode = parseInt(this.value);
@@ -331,21 +473,145 @@
 				shapemode = parseInt(this.value);
 				console.log('shapemode = ' + shapemode);
 			});
-			$('#wavedistortion').change(function () {
-				interp = $(this).val();
-				console.log(this);
-				console.log('interp updated to ' + interp);
+
+			$("#menucontainer").mouseover(function (event){
+				if (sceneDisplayed && !drawing && !drawingFilter) {
+					$("#menu").show();
+				}	
+			});
+
+			$("#menucontainer").mouseout(function (event) {
+				$("#menu").hide();
+			});
+
+			$("#penimage").click(function(){
+				switch(drawmode){
+					case DrawMode.PEN:
+						this.src = "images/pen.png"
+						drawmode = DrawMode.NONE;
+					break;
+					case DrawMode.NONE:
+						this.src = "images/penselected.png"
+						drawmode = DrawMode.PEN;
+					break;
+					case DrawMode.FILTER:
+						var filt = $($("#filterimage"))[0];
+						filt.src = "images/filter.png";
+
+						this.src = "images/penselected.png"
+						drawmode = DrawMode.PEN;
+					default:
+				}
+			});
+
+			$("#filterimage").click(function(){
+				switch(drawmode){
+					case DrawMode.FILTER:
+						this.src = "images/filter.png"
+						drawmode = DrawMode.NONE;
+					break;
+					case DrawMode.NONE:
+						this.src = "images/filterselected.png"
+						drawmode = DrawMode.FILTER;
+					break;
+					case DrawMode.PEN:
+						var pen = $($("#penimage"))[0];
+						pen.src = "images/pen.png";
+						this.src = "images/filterselected.png"
+						drawmode = DrawMode.FILTER;
+					default:
+				}
+			});
+			$("#canvas").mousedown(function (event) {
+				if (drawmode == DrawMode.PEN) {
+					drawing = true;
+					var nextLine = [];
+					noiseLines.push(nextLine);
+				}
+
+				else if (drawmode == DrawMode.FILTER){
+					drawingFilter = true;
+					var filter = {x: 0, y:0, r:0};
+
+					var offsetX = $(this).offset().left;
+					var offsetY = $(this).offset().top;
+						
+					filter.x = event.pageX - offsetX;
+					filter.y = event.pageY - offsetY;	
+					filterShapes.push(filter);
+				}
+			});
+
+			$("canvas").mousemove(function (event) {
+				var offsetX = $(this).offset().left;
+				var offsetY = $(this).offset().top;
+
+				if (drawing && drawmode == DrawMode.PEN) {
+					var line = noiseLines[noiseLines.length - 1];
+					
+					var nextpt = {x: event.pageX - offsetX, y:event.pageY - offsetY};
+					line.push(nextpt);
+				}
+
+				else if (drawingFilter && drawmode == DrawMode.FILTER) {
+					var filter = filterShapes[filterShapes.length - 1];
+					var r = Math.max(0, event.pageX - offsetX - filter.x);
+					filter.r = r;		
+				}
+			});	
+
+			$("#canvas").mouseup(function (event) {
+				if (drawmode == DrawMode.PEN) {
+					drawing = false;
+				}
+				else if (drawmode == DrawMode.FILTER) {
+					drawingFilter = false;
+				}
+			});
+		
+			$(".color").spectrum({showInput:true});
+			
+			$("#color1").change(function() {
+				color1 = this.value;
+			});
+
+			$("#color2").change(function() {
+				color2 = this.value;
+			});
+
+			$("#color3").change(function() {
+				color3 = this.value;
 			});
 			});	
+
+
 		</script>
 	</head>
 
 	<body>
 		<h1>Sound Scene</h1>
-		<div id="dragDiv" ondragover="allowDrop(event)" ondrop="drop(event)"><span> drag sound here </span></div>
-		<input type ='range' id='wavedistortion' name = "distortion" min="0" max ="1" step = "0.01" value="0">DISTORT</input>
-		<canvas id="canvas"></canvas>
-
+		<div id="dragDiv" class="row" ondragover="allowDrop(event)" ondrop="drop(event)"><image src="images/draganddrop.png"/></div>
+		
+		<div class="container">
+		<div class= "row">
+				<canvas id="canvas"></canvas>
+		</div>
+		<div id="menucontainer" class = "container">
+			<div id="menu" class="row">
+				<div class="col-md-2">
+					<div id="wavedistortion" class="slider" ></div>
+					<div id="playbackspeed" class="slider" ></div>
+				</div>
+				<image id="penimage" src="images/pen.png"></image> <image id="filterimage" src="images/filter.png"></image>
+				<input id="color1"  class="color" type="color" name = "color" value="#0000FF"/>
+				<input  id="color2" class="color" type="color" name = "color2" value="#FFFF00"/>
+				<input  id="color3" class="color" type="color" name = "color3" value="#00FF00"/>
+				<div class="col-md-2">
+				</div>
+			</div>
+		</div>
+		</div>
+		
 		<div id='controls'>
 		<p>//TEMPORARY CONTROLS</p>
 		<p>Shape Mode: </p>

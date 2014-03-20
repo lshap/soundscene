@@ -65,6 +65,7 @@
 			var drawmode = 2;
 			var interp = 0;
 			var filterShapes = []; 
+			var filters = [];
 			var reversed = false;
 
 		
@@ -495,14 +496,32 @@
 					loadSound(data);
 				}
 			}
+		
+			function applyEffects() {
 
+				audioSource.disconnect(0);
+				audioSource.playbackRate.value = 1 / spacing;
+				var source = audioSource;
+	
+				for (var i = 0; i < filters.length; i++) {
+					var filter = filters[i];
+					audioSource.connect(filter);
+					audioSource = filter;	
+				}
+
+				analyser.connect(audioContext.destination);
+				audioSource.connect(analyser);		 
+				audioSource = source;
+			}
+		
 			function wavedistortionChange(event, ui) {
 				interp = ui.value;
 			}
 
 			function playbackspeedChange(event, ui) { 
 				spacing = Math.max(0.1, ui.value);
-				audioSource.playbackRate.value = 1 / spacing;
+				applyEffects();
+				// audioSource.playbackRate.value = 1 / spacing;
 			}
 
 			$(document).ready(function() {
@@ -625,6 +644,7 @@
 	
 						if (Math.sqrt(Math.pow(xc - x, 2) + Math.pow(yc - y, 2)) < nextfilter.r) {
 							filterShapes.splice(i, 1); // remove this filter
+							applyEffects();
 							break;
 						}
 					}
@@ -676,21 +696,21 @@
 			
 							filter.frequency.value = freq;
 							filter.Q.value = 2 / newfilter.r;
-							audioSource.disconnect(0);
+							filters.push(filter);
+
+							applyEffects();
+						/*	audioSource.disconnect(0);
 							audioSource.connect(filter);
 							
 							audioSource = filter;	
 							audioSource.connect(analyser);
 							analyser.connect(audioContext.destination);
-							audioSource.connect(audioContext.destination);
-						
-							// audioSource = filter;
-							console.log(audioSource);	
+							audioSource.connect(audioContext.destination); */
 						}
 					}
 				}
 			});
-		
+	
 			$(".color").spectrum({showInput:true});
 			
 			$("#color1").change(function() {

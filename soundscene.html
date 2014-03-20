@@ -50,6 +50,7 @@
 			var analyser;
 			var waveshaper;
 			var wavedistort;
+			var gainnode;
 
 			var freqDomain;
 			var timeDomain;
@@ -147,7 +148,7 @@
 			function createWSCurve(amount, numsamples) {
 				var curve = new Float32Array(numsamples);
 				if (amount >=0 && amount < 1) {
-					var k = 2 * amount / (1 - amount);
+					var k = 10 * amount / (1 - amount);
 					for (var i = 0; i < numsamples; i++) {
 						var x = (i - 0) * (1 - (-1)) / (numsamples - 0) + (-1);
 						curve[i] = (1 + k) * x / (1+ k * Math.abs(x));					
@@ -485,6 +486,7 @@
 				}
 				
 				audioSource = audioContext.createBufferSource();
+				gainnode = audioContext.createGain();
 				
 				try {
 					audioSource.buffer = audioContext.createBuffer(buffer,false);
@@ -534,7 +536,10 @@
 				audioSource.playbackRate.value = 1 / spacing;
 				waveshaper.connect(audioContext.destination);
 				audioSource.connect(waveshaper);			
-	
+
+				gainnode.connect(audioContext.destination);
+				audioSource.connect(gainnode);	
+
 				var source = audioSource; // save state
 					
 				// add filters
@@ -546,8 +551,7 @@
 
 				analyser.connect(audioContext.destination);
 				audioSource.connect(analyser);
-		 
-				audioSource = source; // restore state
+			 	audioSource = source; // restore state
 			}
 
 			function addNoise() {
@@ -606,7 +610,12 @@
 		
 			function wavedistortionChange(event, ui) {
 				interp = ui.value;
-				wavedistort = ui.value / 2 - 1;
+				wavedistort = ui.value /4;
+
+				if (wavedistort >= 0.99) {
+					wavedistort = 0.985;
+				}
+	
 				waveshaper.curve = createWSCurve(wavedistort, audioContext.sampleRate);
 				applyEffects();
 			}
@@ -733,21 +742,17 @@
 			$("#canvas").mouseup(function (event) {
 				var dist = Math.sqrt(Math.pow(event.pageX - mousedownx, 2) + Math.pow(event.pageY - mousedowny, 2));
 				console.log("dist = " + dist);
-				if (drawmode == DrawMode.PEN) {
-					drawing = false;
-	
-					if (noiseLines.length > 0) {
-						var newline = noiseLines[noiseLines.length - 1];
-						noiseLines.splice(noiseLines.length -1, 1);
-						whiteNoise.stop();
-					}
-					
-				}
 			
-				else if (dist < 0.001) {
+				if (dist < 0.001) {
 					if (drawmode == DrawMode.FILTER) {
 						filterShapes.splice(filterShapes.length - 1, 1); 
 						drawingFilter = false;
+					}
+
+					else if (drawmode == DrawMode.PEN) {
+						noiseLines.splice(noiseLines.length - 1, 1); 
+						whiteNoise.stop();
+						drawing = false;
 					}
 
 					var offsetX = $(this).offset().left;
@@ -773,6 +778,16 @@
 					}
 				}
 
+				else if (drawmode == DrawMode.PEN) {
+					drawing = false;
+	
+					if (noiseLines.length > 0) {
+						var newline = noiseLines[noiseLines.length - 1];
+						noiseLines.splice(noiseLines.length -1, 1);
+						whiteNoise.stop();
+					}
+					
+				}
 				else if (drawmode == DrawMode.FILTER) {
 					drawingFilter = false;
 

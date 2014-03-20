@@ -587,6 +587,26 @@
 					filter.y = event.pageY - offsetY;	
 					filterShapes.push(filter);
 				}
+
+
+				else {
+					console.log('registered click');
+					var offsetX = $(this).offset().left;
+					var offsetY = $(this).offset().top;
+
+					for (var i = 0; i < filterShapes.length; i++) {
+						var nextfilter = filterShapes[i];
+						var xc = nextfilter.x;
+						var yc = nextfilter.y;
+						var x = event.pageX - offsetX;
+						var y = event.pageY - offsetY;
+	
+						if (Math.sqrt(Math.pow(xc - x, 2) + Math.pow(yc - y, 2)) < nextfilter.r) {
+							filterShapes.splice(i, 1); // remove this filter
+							break;
+						}
+					}
+				}
 			});
 
 			$("canvas").mousemove(function (event) {
@@ -650,9 +670,8 @@
 							}
 			
 							filter.frequency.value = freq;
-							// filter.Q.value = 1/newfilter.r;
 							audioSource.connect(filter);
-							console.log("added filter with frequency " + freq + " and Q factor "+ (1/newfilter.r));  
+							audioSource = filter;
 						}
 					}
 				}

@@ -65,6 +65,8 @@
 			var drawmode = 2;
 			var interp = 0;
 			var filterShapes = []; 
+			var reversed = false;
+
 		
 			var sceneDisplayed = false;			
 			var drawing = false;
@@ -74,7 +76,9 @@
 			var color1 = "#0000ff";
 			var color2 = "#ffff00";
 			var color3 = "#00ff00"
-			var spacing = 1; // number between 1 and 2
+
+			var spacing = 1; // number between 0.1 and 2
+			var framespeed = 1; // rate at which the frames are updated
 			var logged = false;
 	
 			function init() {
@@ -88,7 +92,7 @@
 				$('#menu').hide();
 
 				$("#wavedistortion").slider({max:4, min:0, slide:wavedistortionChange, step:0.2});
-				$("#playbackspeed").slider({min:1, max:2, slide:playbackspeedChange, step: 0.1});
+				$("#playbackspeed").slider({min:0, max:2, slide:playbackspeedChange, step: 0.1, value:1});
 				$('.slider').hide();
 				try {
 					// Fix up for prefixing
@@ -129,11 +133,16 @@
 
 			function analyzeSound() {
 				requestAnimationFrame(analyzeSound);
-//				console.log('analyzing...');
 				if (frame % 10 != 0 && colormode != ColorMode.MONOTONE) {
 					frame ++;
 					return;
 				}
+	
+				if (frame % framespeed != 0) {
+					frame++;
+					return;
+				}
+				
 				var timeDomain = new Uint8Array(analyser.frequencyBinCount);
 				analyser.getByteTimeDomainData(timeDomain);
 			
@@ -167,6 +176,15 @@
 
 						x = (1 - interp) * sx + interp * rx;
 						y = (1 - interp) * sy + interp * ry;
+						
+						if (interp < 0.5) {
+							gridmode = GridMode.SPIRAL;
+							reversed = false;
+						}
+						else {
+							gridmode = GridMode.REVERSESPIRAL;
+							reversed = true;
+						}
 					}
 					else if (interp <= 2) { // rev spiral and epicycloid
 						var rev = 1024 - freq;
@@ -181,6 +199,15 @@
 						var i = interp - 1;
 						x = (1 - i) * rx + i * ex;
 						y = (1 - i) * ry + i * ey;
+						
+						if (interp < 1.5) {
+							gridmode = GridMode.REVERSESPIRAL;
+							reversed = true;
+						}
+						else {
+							gridmode = GridMode.EPICYCLOID;
+							reversed = false;
+						}
  					} 
 					else if (interp <= 3) { // epicycloid and reverse epi
 						var rev = 1024 - freq;
@@ -195,6 +222,15 @@
 						var i = interp - 2;
 						x = (1 - i) * ex + i * rex;
 						y = (1 - i) * ey + i * rey;
+
+						if (interp < 2.5) {
+							gridmode = GridMode.EPICYCLOID;
+							reversed = false;
+						}
+						else {
+							gridmode = GridMode.REVERSEEPIC;
+							reversed = true;
+						}
 					} 
 					else { // rev epi and hyp
 						var a = freq/1024 * 200;
@@ -210,6 +246,15 @@
 						var i = interp - 3;
 						x = (1 - i) * rex + i * hx;
 						y = (1 - i) * rey + i * hy;
+
+						if (interp < 3.5) {
+							gridmode = GridMode.REVERSEEPIC;
+							reversed = true;
+						}
+						else {
+							gridmode = GridMode.HYPOTROCHOID;
+							reversed = false;
+						}
 					} 
 	
 					x = x * spacing + WIDTH/2;
@@ -388,13 +433,14 @@
 
 
 			function drawFilters() {
-				ctxt.fillStyle = 'rgba(255, 255, 255, 0.8)'; 
+				ctxt.fillStyle = 'rgba(255, 255, 255, 0.9)'; 
 				for (var i = 0; i < filterShapes.length; i++) {
+					// draw the filter
 					var nextfilter = filterShapes[i];
 					ctxt.beginPath();
 					ctxt.arc(nextfilter.x, nextfilter.y, nextfilter.r, 0, Math.PI * 2);
 					ctxt.fill();
-				}
+				} // end for
 			}
 
 			// play sound from ArrayBuffer
@@ -452,8 +498,9 @@
 				interp = ui.value;
 			}
 
-			function playbackspeedChange(event, ui) {
-				spacing = ui.value;
+			function playbackspeedChange(event, ui) { 
+				spacing = Math.max(0.1, ui.value);
+				audioSource.playbackRate.value = 1 / spacing;
 			}
 
 			$(document).ready(function() {
@@ -566,6 +613,48 @@
 				}
 				else if (drawmode == DrawMode.FILTER) {
 					drawingFilter = false;
+
+					// add a sound filter
+					if (filterShapes.length > 0) {
+						var newfilter = filterShapes[filterShapes.length - 1];
+						
+						if (newfilter.r > 0) {	
+							var filter = audioContext.createBiquadFilter();
+							filter.type = filter.BANDPASS;
+							var freq;
+								
+							if (reversed == false)  {
+								var a = (newfilter.x - WIDTH/2)/(0.2 * spacing); // freq * cos(freq)
+								var b = (newfilter.y - HEIGHT/2)/(0.2 * spacing); // freq * sin(freq)
+								var x = newfilter.x;
+								var y = newfilter.y;
+								var f = Math.atan(b/a);
+							
+								if (a < 0 && Math.cos(f) > 0) {
+									f += Math.PI;
+								}
+	
+								freq = Math.min(1024, a / Math.cos(f));	
+								}
+							else {
+								var a = (newfilter.x - WIDTH/2)/(0.3 * spacing);
+								var b = (newfilter.y - HEIGHT/2)/(0.3 * spacing);
+								var rf = Math.atan(b/a);
+								
+								if (a < 0 && Math.cos(rf) > 0) {
+									rf += Math.PI;
+								}	
+
+								var rev = Math.min(1024, a/Math.cos(rf));
+								freq = 1024 - rev;
+							}
+			
+							filter.frequency.value = freq;
+							// filter.Q.value = 1/newfilter.r;
+							audioSource.connect(filter);
+							console.log("added filter with frequency " + freq + " and Q factor "+ (1/newfilter.r));  
+						}
+					}
 				}
 			});
 		

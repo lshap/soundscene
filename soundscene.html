@@ -48,6 +48,7 @@
 			var audioContext;
 			var audioSource;
 			var analyser;
+			var convolver;
 			var freqDomain;
 			var timeDomain;
 			var canvas;
@@ -66,8 +67,9 @@
 			var interp = 0;
 			var filterShapes = []; 
 			var filters = [];
+			var oscillators = [];
 			var reversed = false;
-
+			var whiteNoise;
 		
 			var sceneDisplayed = false;			
 			var drawing = false;
@@ -117,6 +119,8 @@
 				}				
 				
 				reader.readAsArrayBuffer(file);
+
+				// init white noise
 			}
 
 
@@ -498,11 +502,11 @@
 			}
 		
 			function applyEffects() {
-
 				audioSource.disconnect(0);
 				audioSource.playbackRate.value = 1 / spacing;
-				var source = audioSource;
-	
+				var source = audioSource; // save state
+					
+				// add filters
 				for (var i = 0; i < filters.length; i++) {
 					var filter = filters[i];
 					audioSource.connect(filter);
@@ -510,8 +514,62 @@
 				}
 
 				analyser.connect(audioContext.destination);
-				audioSource.connect(analyser);		 
-				audioSource = source;
+				audioSource.connect(analyser);
+		 
+				audioSource = source; // restore state
+			}
+
+			function addNoise() {
+				var bufferSize = 2 * audioContext.sampleRate,
+   	 			noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate),
+    				output = noiseBuffer.getChannelData(0);
+				for (var i = 0; i < bufferSize; i++) {
+				    output[i] = Math.random() * 2 - 1;
+				}
+
+				whiteNoise = audioContext.createBufferSource();
+				whiteNoise.loop = true;
+				whiteNoise.buffer = noiseBuffer;
+			}
+		
+			function addFilter(newfilter) {
+				if (newfilter.r > 0) {	
+					var filter = audioContext.createBiquadFilter();
+					filter.type = filter.BANDPASS;
+					var freq;
+						
+					if (reversed == false)  {
+						var a = (newfilter.x - WIDTH/2)/(0.2 * spacing); // freq * cos(freq)
+						var b = (newfilter.y - HEIGHT/2)/(0.2 * spacing); // freq * sin(freq)
+						var x = newfilter.x;
+						var y = newfilter.y;
+						var f = Math.atan(b/a);
+					
+						if (a < 0 && Math.cos(f) > 0) {
+							f += Math.PI;
+						}
+
+						freq = Math.min(1024, a / Math.cos(f));	
+						}
+					else {
+						var a = (newfilter.x - WIDTH/2)/(0.3 * spacing);
+						var b = (newfilter.y - HEIGHT/2)/(0.3 * spacing);
+						var rf = Math.atan(b/a);
+						
+						if (a < 0 && Math.cos(rf) > 0) {
+							rf += Math.PI;
+						}	
+
+						var rev = Math.min(1024, a/Math.cos(rf));
+						freq = 1024 - rev;
+					}
+	
+					filter.frequency.value = freq;
+					filter.Q.value = 2 / newfilter.r;
+					filters.push(filter);
+
+					applyEffects();
+				}
 			}
 		
 			function wavedistortionChange(event, ui) {
@@ -593,8 +651,12 @@
 			$("#canvas").mousedown(function (event) {
 				if (drawmode == DrawMode.PEN) {
 					drawing = true;
-					var nextLine = [];
-					noiseLines.push(nextLine);
+					var nextline = [];
+					noiseLines.push(nextline);					
+	
+					addNoise();
+					whiteNoise.start(0);
+					whiteNoise.connect(audioContext.destination);		
 				}
 
 				else if (drawmode == DrawMode.FILTER){
@@ -641,9 +703,9 @@
 						var yc = nextfilter.y;
 						var x = event.pageX - offsetX;
 						var y = event.pageY - offsetY;
-	
 						if (Math.sqrt(Math.pow(xc - x, 2) + Math.pow(yc - y, 2)) < nextfilter.r) {
 							filterShapes.splice(i, 1); // remove this filter
+							filters.splice(i, 1);
 							applyEffects();
 							break;
 						}
@@ -655,6 +717,13 @@
 			$("#canvas").mouseup(function (event) {
 				if (drawmode == DrawMode.PEN) {
 					drawing = false;
+	
+					if (noiseLines.length > 0) {
+						var newline = noiseLines[noiseLines.length - 1];
+						noiseLines.splice(noiseLines.length -1, 1);
+						whiteNoise.stop();
+					}
+					
 				}
 				else if (drawmode == DrawMode.FILTER) {
 					drawingFilter = false;
@@ -662,51 +731,7 @@
 					// add a sound filter
 					if (filterShapes.length > 0) {
 						var newfilter = filterShapes[filterShapes.length - 1];
-						
-						if (newfilter.r > 0) {	
-							var filter = audioContext.createBiquadFilter();
-							filter.type = filter.BANDPASS;
-							var freq;
-								
-							if (reversed == false)  {
-								var a = (newfilter.x - WIDTH/2)/(0.2 * spacing); // freq * cos(freq)
-								var b = (newfilter.y - HEIGHT/2)/(0.2 * spacing); // freq * sin(freq)
-								var x = newfilter.x;
-								var y = newfilter.y;
-								var f = Math.atan(b/a);
-							
-								if (a < 0 && Math.cos(f) > 0) {
-									f += Math.PI;
-								}
-	
-								freq = Math.min(1024, a / Math.cos(f));	
-								}
-							else {
-								var a = (newfilter.x - WIDTH/2)/(0.3 * spacing);
-								var b = (newfilter.y - HEIGHT/2)/(0.3 * spacing);
-								var rf = Math.atan(b/a);
-								
-								if (a < 0 && Math.cos(rf) > 0) {
-									rf += Math.PI;
-								}	
-
-								var rev = Math.min(1024, a/Math.cos(rf));
-								freq = 1024 - rev;
-							}
-			
-							filter.frequency.value = freq;
-							filter.Q.value = 2 / newfilter.r;
-							filters.push(filter);
-
-							applyEffects();
-						/*	audioSource.disconnect(0);
-							audioSource.connect(filter);
-							
-							audioSource = filter;	
-							audioSource.connect(analyser);
-							analyser.connect(audioContext.destination);
-							audioSource.connect(audioContext.destination); */
-						}
+						addFilter(newfilter);	
 					}
 				}
 			});

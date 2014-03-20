@@ -535,7 +535,7 @@
 			function addFilter(newfilter) {
 				if (newfilter.r > 0) {	
 					var filter = audioContext.createBiquadFilter();
-					filter.type = filter.BANDPASS;
+					filter.type = filter.LOWPASS;
 					var freq;
 						
 					if (reversed == false)  {
@@ -565,9 +565,10 @@
 					}
 	
 					filter.frequency.value = freq;
-					filter.Q.value = 2 / newfilter.r;
+//					filter.Q.value = 1 / newfilter.r;
+					filter.Q.value = 0.0001;
 					filters.push(filter);
-
+					console.log("added filter with value = " + freq + " and Q = " + filter.Q.value);
 					applyEffects();
 				}
 			}

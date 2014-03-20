@@ -48,7 +48,9 @@
 			var audioContext;
 			var audioSource;
 			var analyser;
-			var convolver;
+			var waveshaper;
+			var wavedistort;
+
 			var freqDomain;
 			var timeDomain;
 			var canvas;
@@ -110,6 +112,8 @@
 				 catch(e) {
 					alert('Web Audio API is not supported in this browser');
 				}
+
+				initWaveShaper();
 				
 				ctxt.strokeRect(0, 0, canvas.width, canvas.height);	
 			}
@@ -140,6 +144,26 @@
 				return rgba;
 			}
 
+			function createWSCurve(amount, numsamples) {
+				var curve = new Float32Array(numsamples);
+				if (amount >=0 && amount < 1) {
+					var k = 2 * amount / (1 - amount);
+					for (var i = 0; i < numsamples; i++) {
+						var x = (i - 0) * (1 - (-1)) / (numsamples - 0) + (-1);
+						curve[i] = (1 + k) * x / (1+ k * Math.abs(x));					
+
+					}
+				}
+
+				return curve;
+			}
+
+
+			function initWaveShaper() {
+				wavedistort = 0;
+				waveshaper = audioContext.createWaveShaper();
+			}
+	
 			function analyzeSound() {
 				requestAnimationFrame(analyzeSound);
 				if (frame % 10 != 0 && colormode != ColorMode.MONOTONE) {
@@ -508,6 +532,9 @@
 			function applyEffects() {
 				audioSource.disconnect(0);
 				audioSource.playbackRate.value = 1 / spacing;
+				waveshaper.connect(audioContext.destination);
+				audioSource.connect(waveshaper);			
+	
 				var source = audioSource; // save state
 					
 				// add filters
@@ -579,6 +606,9 @@
 		
 			function wavedistortionChange(event, ui) {
 				interp = ui.value;
+				wavedistort = ui.value / 2 - 1;
+				waveshaper.curve = createWSCurve(wavedistort, audioContext.sampleRate);
+				applyEffects();
 			}
 
 			function playbackspeedChange(event, ui) { 
@@ -699,34 +729,7 @@
 				}
 			});	
 
-
-		/*	$("#canvas").click(function (event) {
-				if (drawmode != DrawMode.PEN) {
-					var offsetX = $(this).offset().left;
-					var offsetY = $(this).offset().top;
-
-					for (var i = 0; i < filterShapes.length; i++) {
-						var nextfilter = filterShapes[i];
-						var xc = nextfilter.x;
-						var yc = nextfilter.y;
-						var x = event.pageX - offsetX;
-						var y = event.pageY - offsetY;
-
-						if (Math.sqrt(Math.pow(xc - x, 2) + Math.pow(yc - y, 2)) < nextfilter.r) {
-							filterShapes.splice(i, 1); // remove this filter
-						//	console.log("filter shapes after click ");
-						//	console.log(filterShapes);
-							console.log('removed filter shape at position ' + i);
-							filters.splice(i, 1);
-							console.log('removed filter at position ' + i);
-							applyEffects();
-							break;
-						}
-					}
-				}
-
-			});*/				
-
+			
 			$("#canvas").mouseup(function (event) {
 				var dist = Math.sqrt(Math.pow(event.pageX - mousedownx, 2) + Math.pow(event.pageY - mousedowny, 2));
 				console.log("dist = " + dist);
@@ -745,7 +748,6 @@
 					if (drawmode == DrawMode.FILTER) {
 						filterShapes.splice(filterShapes.length - 1, 1); 
 						drawingFilter = false;
-						console.log('set filter false');
 					}
 
 					var offsetX = $(this).offset().left;

@@ -474,9 +474,11 @@
 
 				lastAmps = new Float32Array(analyser.frequencyBinCount);
 
+//				analyser.connect(audioContext.destination);
+//				audioSource.connect(audioContext.destination);
+				
 				analyser.connect(audioContext.destination);
-				audioSource.connect(audioContext.destination);
-		 
+				audioSource.connect(analyser);		 
 				audioSource.start(0);
 				analyzeSound();
 			}		
@@ -588,25 +590,6 @@
 					filterShapes.push(filter);
 				}
 
-
-				else {
-					console.log('registered click');
-					var offsetX = $(this).offset().left;
-					var offsetY = $(this).offset().top;
-
-					for (var i = 0; i < filterShapes.length; i++) {
-						var nextfilter = filterShapes[i];
-						var xc = nextfilter.x;
-						var yc = nextfilter.y;
-						var x = event.pageX - offsetX;
-						var y = event.pageY - offsetY;
-	
-						if (Math.sqrt(Math.pow(xc - x, 2) + Math.pow(yc - y, 2)) < nextfilter.r) {
-							filterShapes.splice(i, 1); // remove this filter
-							break;
-						}
-					}
-				}
 			});
 
 			$("canvas").mousemove(function (event) {
@@ -626,6 +609,28 @@
 					filter.r = r;		
 				}
 			});	
+
+
+			$("#canvas").click(function (event) {
+				if (drawmode != DrawMode.PEN) {
+					var offsetX = $(this).offset().left;
+					var offsetY = $(this).offset().top;
+
+					for (var i = 0; i < filterShapes.length; i++) {
+						var nextfilter = filterShapes[i];
+						var xc = nextfilter.x;
+						var yc = nextfilter.y;
+						var x = event.pageX - offsetX;
+						var y = event.pageY - offsetY;
+	
+						if (Math.sqrt(Math.pow(xc - x, 2) + Math.pow(yc - y, 2)) < nextfilter.r) {
+							filterShapes.splice(i, 1); // remove this filter
+							break;
+						}
+					}
+				}
+
+			});				
 
 			$("#canvas").mouseup(function (event) {
 				if (drawmode == DrawMode.PEN) {
@@ -670,8 +675,17 @@
 							}
 			
 							filter.frequency.value = freq;
+							filter.Q.value = 2 / newfilter.r;
+							audioSource.disconnect(0);
 							audioSource.connect(filter);
-							audioSource = filter;
+							
+							audioSource = filter;	
+							audioSource.connect(analyser);
+							analyser.connect(audioContext.destination);
+							audioSource.connect(audioContext.destination);
+						
+							// audioSource = filter;
+							console.log(audioSource);	
 						}
 					}
 				}

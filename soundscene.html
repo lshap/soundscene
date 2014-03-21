@@ -83,7 +83,7 @@
 			var drawingFilter = false;
 			var noiseLines = [];	
 
-			var color1 = "#0000ff";
+			var color1 = "#7355d7";
 			var color2 = "#ffff00";
 			var color3 = "#00ff00"
 
@@ -100,6 +100,7 @@
 				$('#controls').hide();
 				$('#canvas').hide();
 				$('#menu').hide();
+				$('#backBtn').hide();
 
 				$("#wavedistortion").slider({max:4, min:0, slide:wavedistortionChange, step:0.2});
 				$("#playbackspeed").slider({min:0, max:2, slide:playbackspeedChange, step: 0.1, value:1});
@@ -499,6 +500,8 @@
 				$('h1').hide();
 				$('#dragDiv').hide();
 				$('#canvas').show();
+				//$('#backBtn').show();
+				$('#main').css("background-color", "white");
 				sceneDisplayed = true;
 				$('.slider').show();
 				$('#controls').hide();	
@@ -803,7 +806,7 @@
 					deletedFilter = false;
 				}
 				
-			});
+			})
 	
 			$(".color").spectrum({showInput:true});
 			
@@ -818,6 +821,11 @@
 			$("#color3").change(function() {
 				color3 = this.value;
 			});
+
+			$("#backBtn").click(function() {
+				window.location.reload();
+			});
+
 			});	
 
 
@@ -825,12 +833,16 @@
 	</head>
 
 	<body>
-		<h1>Sound Scene</h1>
-		<div id="dragDiv" class="row" ondragover="allowDrop(event)" ondrop="drop(event)"><image src="images/draganddrop.png"/></div>
+		<div id="main">
+	<!--	<h1>SOUND SCENE</h1> -->
+		<div id="dragDiv" class="row" ondragover="allowDrop(event)" ondrop="drop(event)">
+			<image id="playIm" src="images/draganddroppurple.png"/>
+		</div>
 		
 		<div class="container">
 		<div class= "row">
 				<canvas id="canvas"></canvas>
+				<button type = "back" id="backBtn">back</button>
 		</div>
 		<div id="menucontainer" class = "container">
 			<div id="menu" class="row">
@@ -839,7 +851,7 @@
 					<div id="playbackspeed" class="slider" ></div>
 				</div>
 				<image id="penimage" src="images/pen.png"></image> <image id="filterimage" src="images/filter.png"></image>
-				<input id="color1"  class="color" type="color" name = "color" value="#0000FF"/>
+				<input id="color1"  class="color" type="color" name = "color" value="#7355d7"/>
 				<input  id="color2" class="color" type="color" name = "color2" value="#FFFF00"/>
 				<input  id="color3" class="color" type="color" name = "color3" value="#00FF00"/>
 				<div class="col-md-2">
@@ -884,5 +896,6 @@
 		<input type='radio'  class='gridmode'  name='gridmode' value='9'> HYPOTROCHOID </input>
 		<br></br>
 		</div>
+	</div>
 </body>
 </html>

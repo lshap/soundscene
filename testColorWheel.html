@@ -23,17 +23,19 @@
 			var ctxt;
 			var width = 200;
 			var height = 200;
+			var startX = 100;
+			var startY = 100;
 			var markerRad = 10;
-
-
+			var selectedmark = -1;
+			var mdx;
+			var mdy;
 
 			function markerIndex(x, y) {
 				var index = -1;
 				for (var i = 0; i < markers.length; i++) {
 					var marker = markers[i];
-					var px = width/2 + marker.radius * Math.cos(marker.angle);
-					var py = height/2 + marker.radius * Math.sin(marker.angle);
-					
+					var px = marker.x;
+					var py = marker.y;	
 					var check = Math.pow(x - px, 2) + Math.pow(y - py, 2);
 					if (check < Math.pow(markerRad, 2)) {
 						index = i;
@@ -46,17 +48,16 @@
 
 			function drawMarkers(){ 
 				ctxt.clearRect(0, 0, width, height); 
-				ctxt.drawImage(colorwheel, 0, 0, width, height);			
+				ctxt.drawImage(colorwheel,startX, startY, width, height);			
 
 				for(var i = 0; i < markers.length; i++) {
 					ctxt.beginPath();
 					var marker = markers[i];
 					ctxt.strokeStyle = "#FFFFFF";
 					ctxt.lineWidth = 3;
-					var px = width/2 + marker.radius * Math.cos(marker.angle);
-					var py = height/2 + marker.radius * Math.sin(marker.angle);
+					var px = marker.x;
+					var py = marker.y;
 				
-					console.log("center: " + px + " , " + py);	
 					var imgData = ctxt.getImageData(px, py, 1, 1).data;
 					var r = imgData[0];					
 					var g = imgData[1];					
@@ -72,7 +73,10 @@
 
 			$(document).ready(function(){
 				for (var i = 0; i < 3; i++) {
-					var next = {radius: 90, angle: Math.PI/6 * i};
+					var x = startX + width/2 + 90 * Math.cos(Math.PI/6 * i);
+					var y = startX + width/2 + 90 * Math.sin(Math.PI/6 * i);
+
+					var next = {x:x, y:y};
 					markers[i] = next;	
 				}
 
@@ -94,16 +98,49 @@
 				$("#canvas").mousedown(function(ev) {
 					var x = ev.pageX;
 					var y = ev.pageY;
-					var ind = markerIndex(x, y);
+					var ax = x - (startX + width/2);
+					var ay = y - (startY + width/2);
+
+					/*console.log("x = " + x);
+					console.log("y = " + y);
+					console.log("ax = " + ax);
+					console.log("ay = " + ay);*/
+
+					selectedmark = markerIndex(x, y);
 				});
 
 				$("#canvas").mouseup(function(ev) {
-
+					selectedmark = -1;
 				});
 				
 
 				$("#canvas").mousemove(function(ev) {
+					if (selectedmark != -1) {
+						var marker = markers[selectedmark];
+						
+						var ux = ev.pageX;
+						var uy = ev.pageY;	
+						var boundscheck = Math.pow(ux - (startX + width/2), 2) + Math.pow(uy - (startY + width/2),2);
 
+						if (boundscheck < Math.pow(width/2 - markerRad,2)) {
+							marker.x = ev.pageX;
+							marker.y = ev.pageY;
+						} 
+						
+						else {
+							var radius = width/2 - markerRad;
+							var ax = ux - (startX + width/2);
+							var ay = uy - (startY + width/2);
+							var currRadius = Math.sqrt(Math.pow(ax, 2) + Math.pow(ay, 2));
+										  
+
+							marker.x = startX + width/2 + radius * ax/currRadius;
+							marker.y = startY + width/2 + radius * ay/currRadius;
+
+						}
+					}
+
+					drawMarkers();
 				});
 
 			});

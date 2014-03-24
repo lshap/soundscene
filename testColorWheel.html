@@ -1,0 +1,117 @@
+<html>
+	<head>
+		<script src="js/jquery-1.11.0.min.js"></script>
+		<style>	
+			.marker {
+				position:absolute;
+				width:10px;
+				height:10px;
+				border-radius:10px;
+				border:2px solid black;
+			}
+	
+			#canvas {
+
+				position:fixed;
+				top:0px;
+				left:0px;
+			}
+		</style>
+		<script type="text/javascript">
+			var markers = [];
+			var canvas;
+			var ctxt;
+			var width = 200;
+			var height = 200;
+			var markerRad = 10;
+
+
+
+			function markerIndex(x, y) {
+				var index = -1;
+				for (var i = 0; i < markers.length; i++) {
+					var marker = markers[i];
+					var px = width/2 + marker.radius * Math.cos(marker.angle);
+					var py = height/2 + marker.radius * Math.sin(marker.angle);
+					
+					var check = Math.pow(x - px, 2) + Math.pow(y - py, 2);
+					if (check < Math.pow(markerRad, 2)) {
+						index = i;
+						break;
+					}	
+				}
+
+				return index;
+			}
+
+			function drawMarkers(){ 
+				ctxt.clearRect(0, 0, width, height); 
+				ctxt.drawImage(colorwheel, 0, 0, width, height);			
+
+				for(var i = 0; i < markers.length; i++) {
+					ctxt.beginPath();
+					var marker = markers[i];
+					ctxt.strokeStyle = "#FFFFFF";
+					ctxt.lineWidth = 3;
+					var px = width/2 + marker.radius * Math.cos(marker.angle);
+					var py = height/2 + marker.radius * Math.sin(marker.angle);
+				
+					console.log("center: " + px + " , " + py);	
+					var imgData = ctxt.getImageData(px, py, 1, 1).data;
+					var r = imgData[0];					
+					var g = imgData[1];					
+					var b = imgData[2];					
+					var a = imgData[3];
+
+					ctxt.fillStyle = "rgba( " + r + " , " +  g + " , " +  b + " , " + a + " )";
+					ctxt.arc(px, py, markerRad, 0, Math.PI * 2);	
+					ctxt.stroke();
+					ctxt.fill();
+				}
+			}
+
+			$(document).ready(function(){
+				for (var i = 0; i < 3; i++) {
+					var next = {radius: 90, angle: Math.PI/6 * i};
+					markers[i] = next;	
+				}
+
+				canvas = document.getElementById("canvas");
+				console.log(canvas);
+
+
+				canvas.width = 500;
+				canvas.height = 500; 
+				ctxt = canvas.getContext("2d");
+				ctxt.strokeStyle = "#000000";
+
+				$("#colorwheel").hide();	
+				var colorwheel = document.getElementById("colorwheel");
+				colorwheel.onload = function() {
+					drawMarkers();
+				}
+
+				$("#canvas").mousedown(function(ev) {
+					var x = ev.pageX;
+					var y = ev.pageY;
+					var ind = markerIndex(x, y);
+				});
+
+				$("#canvas").mouseup(function(ev) {
+
+				});
+				
+
+				$("#canvas").mousemove(function(ev) {
+
+				});
+
+			});
+		</script>
+	</head>
+	<body>
+		<canvas id = "canvas" ondragover="allowDrop(event)" ondrop="onDrop(event)"> </canvas>
+		<img src="images/colorwheel.png" id="colorwheel"></img>
+	</body>
+</html>
+

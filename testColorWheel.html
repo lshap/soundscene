@@ -66,6 +66,37 @@
 					var px = marker.x;
 					var py = marker.y;
 				
+					// draw background shape
+					ctxt.fillStyle = "rgba(255, 255, 255, 0.5)";
+					ctxt.beginPath();
+					var offsetx = startX + width/2; 
+					var offsety = startY + width/2;
+					var r = Math.sqrt(Math.pow(px - offsetx, 2) + Math.pow(py - offsety, 2));
+					var angle = Math.atan2(py - offsety, px - offsetx);
+					var thet = markerRad/r;
+
+					var startx = offsetx + (r - 10) * Math.cos(angle - thet);
+					var starty = offsety + (r - 10) * Math.sin(angle - thet);
+
+					var leftx = offsetx + (r) * Math.cos(angle - thet);
+					var lefty = offsety + (r) * Math.sin(angle - thet);
+
+					var centx = offsetx + (r + 15) * Math.cos(angle);
+					var centy = offsety + (r + 15) * Math.cos(angle);
+
+					var rightx = offsetx + (r) * Math.cos(angle + thet);
+					var righty = offsety + (r) * Math.sin(angle + thet);
+						
+					var endx = offsetx + (r - 10) * Math.cos(angle + thet);
+					var endy = offsety + (r - 10) * Math.sin(angle + thet);
+
+					ctxt.moveTo(offsetx, offsety);
+					ctxt.lineTo(leftx, lefty);
+					ctxt.lineTo(rightx, righty);
+					ctxt.closePath();
+					ctxt.fill();
+
+					// get fill color from wheel image	
 					var imgData = ctxt.getImageData(px, py, 1, 1).data;
 					var r = imgData[0];					
 					var g = imgData[1];					
@@ -73,6 +104,7 @@
 					var a = imgData[3];
 
 					ctxt.fillStyle = "rgba( " + r + " , " +  g + " , " +  b + " , " + a + " )";
+					ctxt.beginPath();
 					ctxt.arc(px, py, markerRad, 0, Math.PI * 2);	
 					ctxt.stroke();
 					ctxt.fill();

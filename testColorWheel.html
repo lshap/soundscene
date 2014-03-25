@@ -29,13 +29,17 @@
 			var markerRad = 10;
 			var selectedmark = -1;
 
-			function createColorWheel(rad, posx, posy) {
+			function ColorWheel(rad, posx, posy) {
 				startX = posx;
 				startY = posy;
 				markerRad = rad/20;
 				width = rad;
 				init();
 			}
+			
+			ColorWheel.prototype.getColors = function() {
+				return colors;
+			}	
 
 			function markerIndex(x, y) {
 				var index = -1;
@@ -112,6 +116,7 @@
 					ctxt.fill();
 				}
 			}
+		
 
 			//$(document).ready(function(){
 			function init() {
@@ -273,12 +278,13 @@
 		</script>
 		<script>
 			$(document).ready(function() {
-				createColorWheel(100, 50, 50);
+				var wheel = new ColorWheel(100, 50, 50);
+				console.log(wheel.getColors());
 			});
 		</script>
 	</head>
 	<body>
-		<canvas id = "canvas" ondragover="allowDrop(event)" ondrop="onDrop(event)"> </canvas>
+		<canvas id = "canvas"> </canvas>
 		<img src="images/colorwheel.png" id="colorwheel"></img>
 	</body>
 </html>

@@ -4,10 +4,10 @@
 	<head>
 
 		<link rel="stylesheet" type="text/css" href="soundscene.css"/>
-		<script type="text/javascript" src="js/pitch.js"></script>
 		<script src="js/jquery-1.11.0.min.js"></script>
 		<script src="js/jquery-ui-1.10.4.custom.min.js"></script>
 		<script src='js/spectrum.js'></script>
+		<script src="js/ColorWheel.js"></script>
 		<link rel='stylesheet' href='spectrum.css' />
 		<link rel='stylesheet' href='bootstrap.css'>
 		<link rel='stylesheet' href='jquery-ui-1.10.4.custom.min.css'>
@@ -86,7 +86,7 @@
 			var color1 = "#7355d7";
 			var color2 = "#ffff00";
 			var color3 = "#00ff00"
-
+			var colorwheel;
 			var spacing = 1; // number between 0.1 and 2
 			var framespeed = 1; // rate at which the frames are updated
 			var logged = false;
@@ -96,6 +96,7 @@
 				ctxt = canvas.getContext('2d');	
 				canvas.width = WIDTH;
 				canvas.height = HEIGHT;
+				$("#colorwheel").hide();
 				console.log('width = ' + WIDTH + 'height = ' + HEIGHT);
 				$('#controls').hide();
 				$('#canvas').hide();
@@ -633,6 +634,7 @@
 			$(document).ready(function() {
 				init();
 
+			colorwheel = new ColorWheel(100,0,0);
 
 			$(".colormode").change(function () {
 				colormode = parseInt(this.value);
@@ -835,6 +837,7 @@
 	<body>
 		<div id="main">
 	<!--	<h1>SOUND SCENE</h1> -->
+		<canvas id="wheelcanvas"></canvas>
 		<div id="dragDiv" class="row" ondragover="allowDrop(event)" ondrop="drop(event)">
 			<image id="playIm" src="images/draganddroppurple.png"/>
 		</div>
@@ -851,15 +854,15 @@
 					<div id="playbackspeed" class="slider" ></div>
 				</div>
 				<image id="penimage" src="images/pen.png"></image> <image id="filterimage" src="images/filter.png"></image>
-				<input id="color1"  class="color" type="color" name = "color" value="#7355d7"/>
+				<!--<input id="color1"  class="color" type="color" name = "color" value="#7355d7"/>
 				<input  id="color2" class="color" type="color" name = "color2" value="#FFFF00"/>
-				<input  id="color3" class="color" type="color" name = "color3" value="#00FF00"/>
+				<input  id="color3" class="color" type="color" name = "color3" value="#00FF00"/>-->
 				<div class="col-md-2">
 				</div>
 			</div>
 		</div>
 		</div>
-		
+		<img id="colorwheel" src="images/colorwheel.png"></img>	
 		<div id='controls'>
 		<p>//TEMPORARY CONTROLS</p>
 		<p>Shape Mode: </p>

@@ -17,21 +17,19 @@
 				left:0px;
 			}
 		</style>
-		<script type="text/javascript">
-			var markers = [];
+		<script type="text/javascript" src="js/ColorWheel.js">
+			/*var markers = [];
 			var colors = [];
 			var canvas;
 			var ctxt;
 			var width = 200;
 			var height = 200;
-			var startX = 100;
-			var startY = 100;
+			var startX = 0;
+			var startY = 0;
 			var markerRad = 10;
 			var selectedmark = -1;
 
-			function ColorWheel(rad, posx, posy) {
-				startX = posx;
-				startY = posy;
+			function ColorWheel(rad) {
 				markerRad = rad/20;
 				width = rad;
 				init();
@@ -132,8 +130,8 @@
 
 				canvas = document.getElementById("canvas");
 
-				canvas.width = 500;
-				canvas.height = 500; 
+				canvas.width = width;
+				canvas.height = height; 
 				ctxt = canvas.getContext("2d");
 				ctxt.strokeStyle = "#000000";
 
@@ -272,19 +270,18 @@
 
 					drawMarkers();
 				});
-
-		//	});
-			}
+			}*/
 		</script>
 		<script>
 			$(document).ready(function() {
-				var wheel = new ColorWheel(100, 50, 50);
+				$("#colorwheel").hide();
+				var wheel = new ColorWheel(100);
 				console.log(wheel.getColors());
 			});
 		</script>
 	</head>
 	<body>
-		<canvas id = "canvas"> </canvas>
+		<canvas id = "wheelcanvas"> </canvas>
 		<img src="images/colorwheel.png" id="colorwheel"></img>
 	</body>
 </html>

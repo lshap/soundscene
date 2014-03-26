@@ -83,9 +83,10 @@
 			var drawingFilter = false;
 			var noiseLines = [];	
 
-			var color1 = "#7355d7";
-			var color2 = "#ffff00";
-			var color3 = "#00ff00"
+			var color1 = [0, 0, 255];
+			var color2 = [255, 255, 0];
+			var color3 = [0, 255, 0];
+
 			var cwheel;
 			var spacing = 1; // number between 0.1 and 2
 			var framespeed = 1; // rate at which the frames are updated
@@ -392,13 +393,19 @@
 						break;					
 						case ColorMode.THREETONE:
 							if (delta > 1) {
-								ctxt.fillStyle = hexStringToRGBA(color1, r);
+								ctxt.fillStyle= "rgba(" + color1[0] + "," + color1[1] 
+										+ "," + color1[2] + "," + r/30 * 0.9 + ")";
+								//ctxt.fillStyle = hexStringToRGBA(color1, r);
 							}
 							else if (delta < -1) {
-								ctxt.fillStyle = hexStringToRGBA(color2, r);
+								ctxt.fillStyle= "rgba(" + color2[0] + "," + color2[1] 
+										+ "," + color2[2] + "," + r/30 * 0.9 + ")";
+							//	ctxt.fillStyle = hexStringToRGBA(color2, r);
 							}
 							else {
-								ctxt.fillStyle = hexStringToRGBA(color3, r);
+								//ctxt.fillStyle = hexStringToRGBA(color3, r);
+								ctxt.fillStyle= "rgba(" + color3[0] + "," + color3[1] 
+										+ "," + color3[2] + "," + r/30 * 0.9 + ")";
 							}
 						break;					
 						case ColorMode.GRADIENT:
@@ -658,6 +665,14 @@
 
 			$("#menucontainer").mouseout(function (event) {
 				$("#menu").hide();
+			});
+
+
+			$("#wheelcanvas").click(function(){
+				var colors = cwheel.getColors();
+				color1 = colors[0];
+				color2 = colors[1];
+				color3 = colors[2];
 			});
 
 			$("#penimage").click(function(){

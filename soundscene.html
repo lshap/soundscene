@@ -83,9 +83,9 @@
 			var drawingFilter = false;
 			var noiseLines = [];	
 
-			var color1 = [0, 0, 255];
-			var color2 = [255, 255, 0];
-			var color3 = [0, 255, 0];
+			var color1 = [255, 35, 38];
+			var color2 = [255, 100, 35];
+			var color3 = [255, 164, 35];
 
 			var cwheel;
 			var spacing = 1; // number between 0.1 and 2
@@ -670,6 +670,7 @@
 
 			$("#wheelcanvas").click(function(){
 				var colors = cwheel.getColors();
+				console.log(cwheel.getColors());
 				color1 = colors[0];
 				color2 = colors[1];
 				color3 = colors[2];

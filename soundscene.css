@@ -72,11 +72,16 @@ p {
 
 #penimage {
 	position:relative;
-	margin-left: 12%;
 	margin-bottom:10px; 
+	padding-left: 20%;
+	margin-top:10px;
 }
 
 #filterimage {
+	position:relative;
+}
+
+#wheelcanvas {
 	position:relative;
 }
 
@@ -89,7 +94,7 @@ p {
 	margin-top: 20px;
 	margin-left: 50px;
 	position:relative;
-	width:200px;
+	width:150px;
 }
 
 #wavedistoriton {

@@ -16,38 +16,36 @@ body {
 	position:relative;
 	margin-left:42.5%;
 	margin-right:42.5%;
-	//margin-top:10%;
-	margin-top:20%;
-	width:220px;
+	margin-top:400px;
+	width:500px;
 	height:220px;
 	padding: 10px;
-	border:#7355d7 8px solid;
+//	border:#7355d7 8px solid;
 //	border:#eaff10 8px solid;
-	border-radius:220px;
+//	border-radius:220px;
 	background-color: #FFFFFF;
 }
 
-h1 {
-	font-family: "Helvetica Neue", Arial, sans-serif;
-	font-size: 70px;
-	font-style:bold;
-	color: white;
-	margin-left:40%;
-	padding-top:100px;
-	margin-right:40%;
-	width:100%;
-}
-
 span {
-	font-family: "Helvetica Neue", Arial, sans-serif;
+	font-family: "News Gothic MT", "Helvetica Neue" Arial, sans-serif;
 	font-size: 30px;
-
-}
-
-
-p {
+	color:#FFC9FE;
 	font-weight:bold;
 }
+
+#header {
+	font-family: "News Gothic MT", "Helvetica Neue", Arial, sans-serif;
+	font-size: 70px;
+	font-style:bold;
+	color:#62F0DF; 
+	position:fixed;
+	top:200px;
+	padding-bottom:100px;
+	margin-left:30%;
+	min-width:100%;
+}
+
+
 #canvas {
 	position:fixed;
 	top:0px;
@@ -72,6 +70,17 @@ p {
 	border-radius: 9px;
 }
 
+#linkimage {
+	width:50px;
+	height:50px;
+	margin-right:35px;
+}
+
+#uploadimage {
+	width:50px;
+	height:50px;
+	margin-left:35px;
+}
 #penimage {
 	position:relative;
 	margin-bottom:10px; 
@@ -112,3 +121,5 @@ p {
 	margin-top:50px;
 	margin-left:15px;
 }
+
+

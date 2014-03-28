@@ -6,9 +6,7 @@
 		<link rel="stylesheet" type="text/css" href="soundscene.css"/>
 		<script src="js/jquery-1.11.0.min.js"></script>
 		<script src="js/jquery-ui-1.10.4.custom.min.js"></script>
-		<script src='js/spectrum.js'></script>
 		<script src="js/ColorWheel.js"></script>
-		<link rel='stylesheet' href='spectrum.css' />
 		<link rel='stylesheet' href='bootstrap.css'>
 		<link rel='stylesheet' href='jquery-ui-1.10.4.custom.min.css'>
 		<script type="text/javascript">
@@ -98,6 +96,9 @@
 				canvas.width = WIDTH;
 				canvas.height = HEIGHT;
 				$("#colorwheel").hide();
+				$("#filepicker").hide();
+				$("#urlInput").hide();
+
 				console.log('width = ' + WIDTH + 'height = ' + HEIGHT);
 				$('#controls').hide();
 				$('#canvas').hide();
@@ -676,6 +677,25 @@
 				color3 = colors[2];
 			});
 
+			$("#uploadimage").click(function() {
+				$("#filepicker").click();
+			});
+
+
+			$("#linkimage").click(function() {
+				console.log("registered click");
+				if ($("#urlInput").is(':visible')) {
+					$("#urlInput").hide();
+					$("#uploadimage").show();
+					$("#OR").show();
+				}
+				else {
+					$("#urlInput").show();
+					$("#OR").hide();
+					$("#uploadimage").hide();
+				}
+			});
+
 			$("#penimage").click(function(){
 				switch(drawmode){
 					case DrawMode.PEN:
@@ -826,19 +846,6 @@
 				
 			})
 	
-			$(".color").spectrum({showInput:true});
-			
-			$("#color1").change(function() {
-				color1 = this.value;
-			});
-
-			$("#color2").change(function() {
-				color2 = this.value;
-			});
-
-			$("#color3").change(function() {
-				color3 = this.value;
-			});
 
 			$("#backBtn").click(function() {
 				window.location.reload();
@@ -852,10 +859,15 @@
 
 	<body>
 		<div id="main">
-	<!--	<h1>SOUND SCENE</h1> -->
+		<span id="header">SOUND SCENE</span> 
 		<img id="colorwheel" src="images/colorwheel.png"></img>	
 		<div id="dragDiv" class="row" ondragover="allowDrop(event)" ondrop="drop(event)">
-			<image id="playIm" src="images/draganddroppurple.png"/>
+			<!--<image id="playIm" src="images/draganddroppurple.png"/>-->
+			<input id="filepicker" type="file" />
+			<img id="linkimage" src="images/link.png"></img>
+			<span id="OR">OR</span>
+			<img id="uploadimage" src="images/upload.png"></img>
+			<input type="text" id="urlInput"/>
 		</div>
 		
 		<div class="container">

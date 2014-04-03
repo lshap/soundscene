@@ -12,6 +12,12 @@ body {
 //	background-color:#86ff6b;
 }
 
+#backgroundcanvas {
+	position:fixed;
+	top:100px;
+	margin-left:25%;
+}
+
 #dragDiv {
 	position:relative;
 	margin-left:42.5%;

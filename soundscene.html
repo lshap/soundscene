@@ -43,6 +43,10 @@
 				NONE:2
 			};
 
+			var backCtxt;
+			var backCanvas;
+			var circlePositions;
+
 			var audioContext;
 			var audioSource;
 			var analyser;
@@ -95,6 +99,9 @@
 				ctxt = canvas.getContext('2d');	
 				canvas.width = WIDTH;
 				canvas.height = HEIGHT;
+
+				initBackgroundCanvas();
+
 				$("#colorwheel").hide();
 				$("#filepicker").hide();
 				$("#urlInput").hide();
@@ -103,6 +110,7 @@
 				$('#controls').hide();
 				$('#canvas').hide();
 				$('#menu').hide();
+				$('#menucontainer').hide();
 				$('#backBtn').hide();
 
 				$("#wavedistortion").slider({max:4, min:0, slide:wavedistortionChange, step:0.2});
@@ -121,6 +129,78 @@
 				initWaveShaper();
 				
 				ctxt.strokeRect(0, 0, canvas.width, canvas.height);	
+			}
+
+			function drawBackgroundCircles() {
+				backCtxt.clearRect(0,0, backCanvas.width, backCanvas.height);
+				var backWidth = 630;
+				var backHeight = 300;
+				for (var i = 0; i < circlePositions.length; i++) {
+
+					var x = circlePositions[i].x;
+					var y = circlePositions[i].y;
+					var r = circlePositions[i].r;
+
+					var destx = circlePositions[i].destx;
+					var desty = circlePositions[i].desty;
+					
+					if (Math.abs(x-destx) < 0.0001 && Math.abs(y-desty) < 0.0001) {
+						circlePositions[i].destx = r + Math.random() * (backWidth - 2 * r);
+						circlePositions[i].desty = r + Math.random() * (backHeight - 2 * r);
+					}
+
+					var dx = (destx - x)/(10 * Math.abs(destx - x));
+					var dy = (desty - y)/(10 * Math.abs(desty - y));
+
+					circlePositions[i].x = x + dx;
+					circlePositions[i].y = y + dy;
+
+					backCtxt.beginPath();
+					backCtxt.fillStyle = circlePositions[i].color;
+					backCtxt.arc(x, y, r, 0, Math.PI * 2);
+					backCtxt.fill();
+				}
+
+				requestAnimationFrame(drawBackgroundCircles);
+			}
+
+			function initBackgroundCanvas() {
+				backCanvas = document.getElementById("backgroundcanvas");
+				$("#backgroundcanvas").attr("width", "800px");
+				$("#backgroundcanvas").attr("height", "600px");
+
+				var backWidth = 630;
+				var backHeight = 300;
+
+				backCtxt = backCanvas.getContext('2d');
+				var col1 = 'rgba(127, 241, 227, 0.34)';
+				var col2 = 'rgba(255, 255, 0, 0.56)';
+				var col3 = 'rgba(255, 0, 254, 0.37)';
+				var backColors = [col1, col2, col3];
+				circlePositions = [];
+
+				for (var i = 0; i < 15; i++) {
+					var r = 10 + Math.random() * 40;
+					var x = r + Math.random() * (backWidth - 2 * r);
+					var y = r + Math.random() * (backHeight - 2 * r);
+
+					var destx = r + Math.random() * (backWidth - 2 * r);
+					var desty = r + Math.random() * (backHeight - 2 * r);
+
+					if (i < 5) {
+						colIndex = 0;
+					}
+					else if (i < 10) {
+						colIndex = 1;
+					}
+					else {
+						colIndex = 2;
+					}
+
+					circlePositions.push({x: x, y:y, r:r, destx:destx, desty:desty, color:backColors[colIndex]});
+				}
+				
+				drawBackgroundCircles();
 			}
 			
 			// load sound from input mp3
@@ -509,6 +589,7 @@
 				$('h1').hide();
 				$('#dragDiv').hide();
 				$('#canvas').show();
+				$('#menucontainer').show();
 				//$('#backBtn').show();
 				$('#main').css("background-color", "white");
 				sceneDisplayed = true;
@@ -678,6 +759,7 @@
 			});
 
 			$("#uploadimage").click(function() {
+				console.log("registered upload click");
 				$("#filepicker").click();
 			});
 
@@ -859,6 +941,7 @@
 
 	<body>
 		<div id="main">
+		<canvas id="backgroundcanvas"></canvas>
 		<span id="header">SOUND SCENE</span> 
 		<img id="colorwheel" src="images/colorwheel.png"></img>	
 		<div id="dragDiv" class="row" ondragover="allowDrop(event)" ondrop="drop(event)">

@@ -106,11 +106,19 @@
 			var framespeed = 1; // rate at which the frames are updated
 			var logged = false;
 	
+			window.onresize = function() {
+				console.log('this was called');
+				WIDTH = window.innerWidth;
+				HEIGHT = window.innerHeight * 0.95;
+				$("#canvas").attr("width", WIDTH);
+				$("#canvas").attr("height", HEIGHT);
+ 			}
+
 			function init() {
 				canvas = document.getElementById('canvas'); 
 				ctxt = canvas.getContext('2d');	
-				canvas.width = WIDTH;
-				canvas.height = HEIGHT;
+				$("#canvas").attr("width", WIDTH);
+				$("#canvas").attr("height", HEIGHT);
 
 				initBackgroundCanvas();
 
@@ -155,6 +163,7 @@
 					var x = circlePositions[i].x;
 					var y = circlePositions[i].y;
 					var r = circlePositions[i].r;
+						$(this).trigger("change");
 
 					var destx = circlePositions[i].destx;
 					var desty = circlePositions[i].desty;
@@ -595,6 +604,7 @@
 				
 				audioSource = audioContext.createBufferSource();
 				gainnode = audioContext.createGain();
+				gainnode.gain.value = 5;
 				
 				try {
 					audioSource.buffer = audioContext.createBuffer(buffer,false);
@@ -625,9 +635,13 @@
 
 //				analyser.connect(audioContext.destination);
 //				audioSource.connect(audioContext.destination);
+
+				gainnode.connect(audioContext.destination);
+				audioSource.connect(gainnode);		 
 				
 				analyser.connect(audioContext.destination);
 				audioSource.connect(analyser);		 
+
 				audioSource.start(0);
 				analyzeSound();
 			}		
@@ -771,6 +785,14 @@
 			});
 
 
+			$("#wheelcanvas").change(function(){
+				var radius = cwheel.getRadius(); 
+				var amount = radius/(cwheel.getWidth()/2);
+				//console.log("amount = " + amount);
+				gainnode.gain.value = amount * 5;
+				applyEffects();
+			});
+
 			$("#wheelcanvas").click(function(){
 				var colors = cwheel.getColors();
 				console.log(cwheel.getColors());
@@ -820,14 +842,14 @@
 			$("#info").click(function() {
 				console.log("registered click");
 				if ($("#overlay").is(':visible')) {
-					$("#information").effect("drop",{direction:"right"}, 900);
+					$("#information").effect("drop",{direction:"right"}, 400);
 					$("#overlay").effect("fade");
 					var im = document.getElementById("info");
 					im.src = "images/info.png";
 				}
 				else {
 					$("#overlay").show();
-					$("#information").effect("slide",{direction:"right"},900);
+					$("#information").effect("slide",{direction:"right"},400);
 					var im = document.getElementById("info");
 					im.src = "images/info_hover.png";
 				}
@@ -1028,12 +1050,12 @@
 			<img id="uploadimage" src="images/upload.png"></img>
 			<input type="text" id="urlInput"/>
 		</div>
+		<canvas id="canvas"></canvas>
 		
 		<div class="container">
-		<div class= "row">
-				<canvas id="canvas"></canvas>
+		<!--<div class= "row">-->
 				<button type = "back" id="backBtn">back</button>
-		</div>
+		<!--</div>-->
 		<div id="menucontainer" class = "container">
 			<div id="menu" class="row">
 				<div class="col-md-2">

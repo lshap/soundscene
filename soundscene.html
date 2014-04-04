@@ -608,6 +608,7 @@
 				$('#dragDiv').hide();
 				$('#backgroundcanvas').hide();
 				$('#canvas').show();
+				$("#info").hide();
 				$('#menucontainer').show();
 				//$('#backBtn').show();
 				$('#main').css("background-color", "white");
@@ -650,6 +651,7 @@
 				waveshaper.connect(audioContext.destination);
 				audioSource.connect(waveshaper);			
 
+				$("#info").hide();
 				gainnode.connect(audioContext.destination);
 				audioSource.connect(gainnode);	
 
@@ -808,21 +810,26 @@
 			});
 
 			$("#info").mouseout(function(){
-				var im = document.getElementById("info");
-				im.src = "images/info.png";
+				if ($("#overlay").is(':visible') == false) {
+					var im = document.getElementById("info");
+					im.src = "images/info.png";
+				}
 			});
-
 
 
 			$("#info").click(function() {
 				console.log("registered click");
 				if ($("#overlay").is(':visible')) {
-					$("#information").hide();
-					$("#overlay").hide();
+					$("#information").effect("drop",{direction:"right"}, 900);
+					$("#overlay").effect("fade");
+					var im = document.getElementById("info");
+					im.src = "images/info.png";
 				}
 				else {
-					$("#information").show();
 					$("#overlay").show();
+					$("#information").effect("slide",{direction:"right"},900);
+					var im = document.getElementById("info");
+					im.src = "images/info_hover.png";
 				}
 			});
 

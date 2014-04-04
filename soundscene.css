@@ -63,13 +63,19 @@ body {
 
 #information {
 	font-weight:normal;
-	font-size:18px;
+	font-size:16px;
 	//color:#FFC9FE;
 	//color:#CC33FF;
-	color:#4D4D4D;
-	padding: 10px 10px 10px 10px;
+	//color:#4D4D4D;
+	color:#6B6B6B;
+	padding: 12px 12px 12px 12px;
 	background-color:rgba(127, 241, 227, 0.4);
+	border-radius:10px;
 	position:fixed;
+	width:296px;
+	height:154px;	
+	min-width:296px;
+	min-height:154px;	
 	top:50px;
 	left:70%;
 	margin-right:60px;
@@ -112,12 +118,13 @@ body {
 }
 #penimage {
 	position:relative;
-	margin-bottom:10px; 
+	margin-bottom:100px; 
 	padding-left: 20%;
 }
 
 #filterimage {
 	position:relative;
+	margin-bottom:100px; 
 }
 
 #wheelcanvas {

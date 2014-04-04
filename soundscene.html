@@ -7,9 +7,21 @@
 		<script src="js/jquery-1.11.0.min.js"></script>
 		<script src="js/jquery-ui-1.10.4.custom.min.js"></script>
 		<script src="js/ColorWheel.js"></script>
+		<script src="http://connect.soundcloud.com/sdk.js"></script>
 		<link rel='stylesheet' href='bootstrap.css'>
 		<link rel='stylesheet' href='jquery-ui-1.10.4.custom.min.css'>
 		<script type="text/javascript">
+
+			// init sound cloud api
+			/*SC.initialize({
+				client_id: '0a4952b89f13d2410090d9ba21e63cf5',
+				redirect_uri:'http://www.seas.upenn.edu/~lshapi/soundscene.html'});
+			SC.connect(function(){
+				SC.get('/me', function(me) {
+					console.log("Hello " + me.username);
+				});
+			});*/
+
 			ColorMode = {
 				MONOCHROME: 0,
 				TWOTONE: 1,
@@ -106,6 +118,9 @@
 				$("#filepicker").hide();
 				$("#urlInput").hide();
 
+				$("#information").hide();
+				$("#overlay").hide();
+
 				console.log('width = ' + WIDTH + 'height = ' + HEIGHT);
 				$('#controls').hide();
 				$('#canvas').hide();
@@ -161,7 +176,9 @@
 					backCtxt.fill();
 				}
 
-				requestAnimationFrame(drawBackgroundCircles);
+				if ($("#backcanvas:visible"))  {
+					requestAnimationFrame(drawBackgroundCircles);
+				}
 			}
 
 			function initBackgroundCanvas() {
@@ -587,7 +604,9 @@
 				}				
 				
 				$('h1').hide();
+				$('#header').hide();
 				$('#dragDiv').hide();
+				$('#backgroundcanvas').hide();
 				$('#canvas').show();
 				$('#menucontainer').show();
 				//$('#backBtn').show();
@@ -759,21 +778,71 @@
 			});
 
 			$("#uploadimage").click(function() {
-				console.log("registered upload click");
 				$("#filepicker").click();
 			});
 
+			$("#uploadimage").mouseover(function() {
+				var im = document.getElementById("uploadimage");
+				im.src="images/upload_hover.png";
+			});
+
+			$("#uploadimage").mouseout(function() {
+				var im = document.getElementById("uploadimage");
+				im.src="images/upload.png";
+			});
+
+			$("#linkimage").mouseover(function() {
+				var im = document.getElementById("linkimage");
+				im.src="images/link_hover.png";
+			});
+
+			$("#linkimage").mouseout(function() {
+				var im = document.getElementById("linkimage");
+				im.src="images/link.png";
+			});
+
+
+			$("#info").mouseover(function(){
+				var im = document.getElementById("info");
+				im.src = "images/info_hover.png";
+			});
+
+			$("#info").mouseout(function(){
+				var im = document.getElementById("info");
+				im.src = "images/info.png";
+			});
+
+
+
+			$("#info").click(function() {
+				console.log("registered click");
+				if ($("#overlay").is(':visible')) {
+					$("#information").hide();
+					$("#overlay").hide();
+				}
+				else {
+					$("#information").show();
+					$("#overlay").show();
+				}
+			});
+
+			$("#filepicker").change(function(evt) {
+				var file = evt.target.files[0];
+				loadSound(file);	
+			});
 
 			$("#linkimage").click(function() {
 				console.log("registered click");
 				if ($("#urlInput").is(':visible')) {
 					$("#urlInput").hide();
 					$("#uploadimage").show();
+					$(this).css("margin-top", "0px");
 					$("#OR").show();
 				}
 				else {
 					$("#urlInput").show();
 					$("#OR").hide();
+					$(this).css("margin-top", "3px");
 					$("#uploadimage").hide();
 				}
 			});
@@ -942,7 +1011,7 @@
 	<body>
 		<div id="main">
 		<canvas id="backgroundcanvas"></canvas>
-		<span id="header">SOUND SCENE</span> 
+		<span id="header">SOUND SKETCH</span> 
 		<img id="colorwheel" src="images/colorwheel.png"></img>	
 		<div id="dragDiv" class="row" ondragover="allowDrop(event)" ondrop="drop(event)">
 			<!--<image id="playIm" src="images/draganddroppurple.png"/>-->
@@ -971,6 +1040,13 @@
 				</div>
 			</div>
 		</div>
+		</div>
+		<div id="overlay"></div>
+		<img src="images/info.png" id="info"></img>
+		<div id="information">
+		<span>Welcome to Sound Sketch! Upload an mp3 to begin an interactive
+		      music experience. Your sound will provide a visual base for your
+		      sketch, which will alter the sound you provided as you play around! </span>
 		</div>
 		<div id='controls'>
 		<p>//TEMPORARY CONTROLS</p>

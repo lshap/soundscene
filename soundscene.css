@@ -84,6 +84,7 @@ body {
 #canvas {
 	position:fixed;
 	top:0px;
+	left:0px;
 	height:100%;
 	width:100%;
 }
@@ -119,7 +120,7 @@ body {
 #penimage {
 	position:relative;
 	margin-bottom:100px; 
-	padding-left: 20%;
+	padding-left: 60px;
 }
 
 #filterimage {
@@ -130,6 +131,7 @@ body {
 #wheelcanvas {
 	position:relative;
 	margin-top:25px;
+	margin-left:50px;
 }
 
 .color {
@@ -138,7 +140,7 @@ body {
 }
 
 .slider {
-	margin-top: 25px;
+	margin-top: 40px;
 	margin-left: 50px;
 	position:relative;
 	width:150px;

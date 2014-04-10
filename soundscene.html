@@ -84,6 +84,7 @@
 			var interp = 0;
 			var filterShapes = []; 
 			var filters = [];
+
 			var oscillators = [];
 			var reversed = false;
 			var whiteNoise;
@@ -502,17 +503,14 @@
 							if (delta > 1) {
 								ctxt.fillStyle= "rgba(" + color1[0] + "," + color1[1] 
 										+ "," + color1[2] + "," + r/30 * 0.9 + ")";
-								//ctxt.fillStyle = hexStringToRGBA(color1, r);
 							}
 							else if (delta < -1) {
 								ctxt.fillStyle= "rgba(" + color2[0] + "," + color2[1] 
 										+ "," + color2[2] + "," + r/30 * 0.9 + ")";
-							//	ctxt.fillStyle = hexStringToRGBA(color2, r);
 							}
 							else {
-								//ctxt.fillStyle = hexStringToRGBA(color3, r);
 								ctxt.fillStyle= "rgba(" + color3[0] + "," + color3[1] 
-										+ "," + color3[2] + "," + r/30 * 0.9 + ")";
+										+ "," + color3[2] + "," + r/30 *0.9 + ")";
 							}
 						break;					
 						case ColorMode.GRADIENT:
@@ -589,6 +587,7 @@
 					// draw the filter
 					var nextfilter = filterShapes[i];
 					ctxt.beginPath();
+					//console.log(nextfilter);
 					ctxt.arc(nextfilter.x, nextfilter.y, nextfilter.r, 0, Math.PI * 2);
 					ctxt.fill();
 				} // end for
@@ -687,6 +686,7 @@
 				var bufferSize = 2 * audioContext.sampleRate,
    	 			noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate),
     				output = noiseBuffer.getChannelData(0);
+
 				for (var i = 0; i < bufferSize; i++) {
 				    output[i] = Math.random() * 2 - 1;
 				}
@@ -788,18 +788,16 @@
 			$("#wheelcanvas").change(function(){
 				var radius = cwheel.getRadius(); 
 				var amount = radius/(cwheel.getWidth()/2);
-				//console.log("amount = " + amount);
-				gainnode.gain.value = amount * 5;
-				applyEffects();
-			});
+				gainnode.gain.value = -1 + amount * 6;
 
-			$("#wheelcanvas").click(function(){
 				var colors = cwheel.getColors();
-				console.log(cwheel.getColors());
 				color1 = colors[0];
 				color2 = colors[1];
 				color3 = colors[2];
+
+				applyEffects();
 			});
+
 
 			$("#uploadimage").click(function() {
 				$("#filepicker").click();
@@ -883,14 +881,14 @@
 						drawmode = DrawMode.NONE;
 					break;
 					case DrawMode.NONE:
-						this.src = "images/penselected.png"
+						this.src = "images/pen_selected.png"
 						drawmode = DrawMode.PEN;
 					break;
 					case DrawMode.FILTER:
 						var filt = $($("#filterimage"))[0];
 						filt.src = "images/filter.png";
 
-						this.src = "images/penselected.png"
+						this.src = "images/pen_selected.png"
 						drawmode = DrawMode.PEN;
 					default:
 				}
@@ -903,13 +901,13 @@
 						drawmode = DrawMode.NONE;
 					break;
 					case DrawMode.NONE:
-						this.src = "images/filterselected.png"
+						this.src = "images/filter_selected.png"
 						drawmode = DrawMode.FILTER;
 					break;
 					case DrawMode.PEN:
 						var pen = $($("#penimage"))[0];
 						pen.src = "images/pen.png";
-						this.src = "images/filterselected.png"
+						this.src = "images/filter_selected.png"
 						drawmode = DrawMode.FILTER;
 					default:
 				}
@@ -949,8 +947,18 @@
 				if (drawing && drawmode == DrawMode.PEN) {
 					var line = noiseLines[noiseLines.length - 1];
 					
+					var px = event.pageX - offsetX;
+					var py = event.pageY - offsetY
 					var nextpt = {x: event.pageX - offsetX, y:event.pageY - offsetY};
 					line.push(nextpt);
+					var drawingFilter = audioContext.createBiquadFilter();
+					drawingFilter.type = drawingFilter.HIGHPASS;
+					//console.log("freq value = " + (Math.min(1024,Math.sqrt(px * px + py * py))));
+					
+					drawingFilter.frequency.value = 0;
+
+					//drawingFilter.frequency.value = Math.min(1024,Math.sqrt(px * px + py * py)); 
+					whiteNoise.connect(drawingFilter);
 				}
 
 				else if (drawingFilter && drawmode == DrawMode.FILTER) {
@@ -1045,8 +1053,8 @@
 		<div id="dragDiv" class="row" ondragover="allowDrop(event)" ondrop="drop(event)">
 			<!--<image id="playIm" src="images/draganddroppurple.png"/>-->
 			<input id="filepicker" type="file" />
-			<img id="linkimage" src="images/link.png"></img>
-			<span id="OR">OR</span>
+			<!--<img id="linkimage" src="images/link.png"></img>
+			<span id="OR">OR</span>-->
 			<img id="uploadimage" src="images/upload.png"></img>
 			<input type="text" id="urlInput"/>
 		</div>
@@ -1058,14 +1066,18 @@
 		<!--</div>-->
 		<div id="menucontainer" class = "container">
 			<div id="menu" class="row">
-				<div class="col-md-2">
+				<div class="col-md-2 col-md-offset-2">
 					<div id="wavedistortion" class="slider" ></div>
 					<div id="playbackspeed" class="slider" ></div>
 				</div>
-				<image id="penimage" src="images/pen.png"></image> 
-				<image id="filterimage" src="images/filter.png"></image>
-				<canvas id="wheelcanvas"></canvas>
 				<div class="col-md-2">
+					<image id="penimage" src="images/pen.png"></image> 
+				</div>
+				<div class="col-md-2">
+					<image id="filterimage" src="images/filter.png"></image>
+				</div>
+				<div class="col-md-2">
+					<canvas id="wheelcanvas"></canvas>
 				</div>
 			</div>
 		</div>
@@ -1073,9 +1085,11 @@
 		<div id="overlay"></div>
 		<img src="images/info.png" id="info"></img>
 		<div id="information">
-		<span>Welcome to Sound Sketch! Upload an mp3 to begin an interactive
-		      music experience. Your sound will provide a visual base for your
-		      sketch, which will alter the sound you provided as you play around! </span>
+		<span><span style="font-weight:bold">Welcome to Sound Sketch!</span> Upload an mp3 (by clicking on the upload icon) to begin an interactive
+		      music experience. Your sound will provide the visual base for your
+		      sketch, and by playing around with the visuals you will alter your sound!
+			<br></br>
+		      <span style="font-weight:bold">Hint</span>: once the visualization appears, move your mouse to the bottom of the screen to view your controls. </span>
 		</div>
 		<div id='controls'>
 		<p>//TEMPORARY CONTROLS</p>

@@ -61,12 +61,14 @@
 
 			var audioContext;
 			var audioSource;
+			var soundbuffer;
 			var analyser;
 			var waveshaper;
 			var wavedistort;
 			var gainnode;
 
 			var paused = false;
+			var pausetime;
 			var freqDomain;
 			var timeDomain;
 			var canvas;
@@ -235,8 +237,8 @@
 			function loadSound(file) {
 				var reader = new FileReader();
 				reader.onload = function(e) {
-					var buff = e.target.result;
-					playSound(buff);
+					soundbuffer = e.target.result;
+					playSound(soundbuffer, 0);
 				}				
 				
 				reader.readAsArrayBuffer(file);
@@ -465,10 +467,10 @@
 			}
 
 			// play sound from ArrayBuffer
-			function playSound(buffer) {
+			function playSound(buffer, starttime) {
+				console.log("start time = " + starttime);
 				// disconnect if there is already a song uploaded
 				if (audioSource) {
-					audioSource.stop();
 					audioSource.disconnect(0);
 				}
 				
@@ -503,16 +505,8 @@
 
 				lastAmps = new Float32Array(analyser.frequencyBinCount);
 
-//				analyser.connect(audioContext.destination);
-//				audioSource.connect(audioContext.destination);
-
-				gainnode.connect(audioContext.destination);
-				audioSource.connect(gainnode);		 
-				
-				analyser.connect(audioContext.destination);
-				audioSource.connect(analyser);		 
-
-				audioSource.start(0);
+				applyEffects();
+				audioSource.start(0,starttime);
 				analyzeSound();
 			}		
 			
@@ -747,12 +741,14 @@
 
 			$("#pause").click(function(){
 				if (paused) {
-					audioSource.start();
+					playSound(soundbuffer, pausetime);
 					paused = false;
 				}
 				else {
 					audioSource.stop();	
 					paused = true;
+					pausetime = audioContext.currentTime;
+					console.log("paused at " + pausetime);
 				}
 			});
 

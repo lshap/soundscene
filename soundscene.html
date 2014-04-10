@@ -743,12 +743,13 @@
 				if (paused) {
 					playSound(soundbuffer, pausetime);
 					paused = false;
+					this.src = "images/pause.png";
 				}
 				else {
 					audioSource.stop();	
 					paused = true;
 					pausetime = audioContext.currentTime;
-					console.log("paused at " + pausetime);
+					this.src = "images/play.png";
 				}
 			});
 
@@ -789,6 +790,7 @@
 						drawmode = DrawMode.FILTER;
 					default:
 				}
+				console.log("drawmode = " + drawmode);
 			});
 			$("#canvas").mousedown(function (event) {
 				mousedownx = event.pageX;
@@ -821,7 +823,6 @@
 			$("canvas").mousemove(function (event) {
 				var offsetX = $(this).offset().left;
 				var offsetY = $(this).offset().top;
-
 				if (drawing && drawmode == DrawMode.PEN) {
 					var line = noiseLines[noiseLines.length - 1];
 					
@@ -829,14 +830,12 @@
 					var py = event.pageY - offsetY
 					var nextpt = {x: event.pageX - offsetX, y:event.pageY - offsetY};
 					line.push(nextpt);
-					var drawingFilter = audioContext.createBiquadFilter();
-					drawingFilter.type = drawingFilter.HIGHPASS;
-					//console.log("freq value = " + (Math.min(1024,Math.sqrt(px * px + py * py))));
+					var linefilter = audioContext.createBiquadFilter();
+					linefilter.type = drawingFilter.HIGHPASS;
 					
-					drawingFilter.frequency.value = 0;
+					linefilter.frequency.value = 0;
 
-					//drawingFilter.frequency.value = Math.min(1024,Math.sqrt(px * px + py * py)); 
-					whiteNoise.connect(drawingFilter);
+					whiteNoise.connect(linefilter);
 				}
 
 				else if (drawingFilter && drawmode == DrawMode.FILTER) {
@@ -901,8 +900,6 @@
 
 					// add a sound filter
 					if (filterShapes.length > 0) {
-					//	console.log("filtershapes after mouseup" );
-					//	console.log(filterShapes);
 						var newfilter = filterShapes[filterShapes.length - 1];
 						addFilter(newfilter);	
 					}

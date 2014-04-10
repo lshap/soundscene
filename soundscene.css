@@ -120,6 +120,11 @@ body {
 	margin-top:0px;
 	margin-left:100px;
 }
+#pause {
+	margin-top:20px;
+	width:75px;
+	height:75px;
+}
 #penimage {
 //	position:relative;
 	margin-top:20px;

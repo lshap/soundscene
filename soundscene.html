@@ -66,6 +66,7 @@
 			var wavedistort;
 			var gainnode;
 
+			var paused = false;
 			var freqDomain;
 			var timeDomain;
 			var canvas;
@@ -287,267 +288,137 @@
 					frame++;
 					return;
 				}
-				
-				var timeDomain = new Uint8Array(analyser.frequencyBinCount);
-				analyser.getByteTimeDomainData(timeDomain);
 			
-				var max = 0;
-			/*	for (var i = 0; i < timeDomain.length; i++) {
-					if (timeDomain[i] > max) {
-						max = timeDomain[i];
-					}
-				}
-
-				console.log('max = ' + max);*/
-	
 				var freqDomain = new Float32Array(analyser.frequencyBinCount);
-
 				analyser.getFloatFrequencyData(freqDomain);
-				ctxt.clearRect(0,0, WIDTH, HEIGHT);
-				for (var freq = 0; freq < freqDomain.length; freq++) {
-					var x, y, r;
-					var amp = freqDomain[freq];
 
-					// interpolate between spiral and reverse spiral
-					r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * 50; 
+				if (!paused) {
+					ctxt.clearRect(0,0, WIDTH, HEIGHT);
+					for (var freq = 0; freq < freqDomain.length; freq++) {
+						var x, y, r;
+						var amp = freqDomain[freq];
 
-					if (interp <= 1) {	
-						var sx = 0.2 * freq * Math.cos(freq); 
-						var sy = 0.2 * freq * Math.sin(freq); 
-						
-						var rev = 1024 - freq;
-						var rx =  0.3 * rev * Math.cos(rev);
-						var ry =  0.3 * rev * Math.sin(rev);
+						// interpolate between spiral and reverse spiral
+						r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * 50; 
 
-						x = (1 - interp) * sx + interp * rx;
-						y = (1 - interp) * sy + interp * ry;
-						
-						if (interp < 0.5) {
-							gridmode = GridMode.SPIRAL;
-							reversed = false;
-						}
-						else {
-							gridmode = GridMode.REVERSESPIRAL;
-							reversed = true;
-						}
-					}
-					else if (interp <= 2) { // rev spiral and epicycloid
-						var rev = 1024 - freq;
-						var rx =  0.3 * rev * Math.cos(rev);
-						var ry =  0.3 * rev * Math.sin(rev);
-
-						var a = freq/1024 * 200;
-						var b = a / 7;
-						var ex = (a + b) * Math.cos(freq) - b * Math.cos((a / b + 1)*freq); 
-						var ey = (a + b) * Math.sin(freq) - b * Math.sin((a / b + 1)*freq);
-
-						var i = interp - 1;
-						x = (1 - i) * rx + i * ex;
-						y = (1 - i) * ry + i * ey;
-						
-						if (interp < 1.5) {
-							gridmode = GridMode.REVERSESPIRAL;
-							reversed = true;
-						}
-						else {
-							gridmode = GridMode.EPICYCLOID;
-							reversed = false;
-						}
- 					} 
-					else if (interp <= 3) { // epicycloid and reverse epi
-						var rev = 1024 - freq;
-						var a = freq/1024 * 200;
-						var b = a / 7;
-						var ex = (a + b) * Math.cos(freq) - b * Math.cos((a / b + 1)*freq); 
-						var ey = (a + b) * Math.sin(freq) - b * Math.sin((a / b + 1)*freq);
-
-						var rex = (a + b) * Math.cos(rev) - b * Math.cos((a / b + 1)*rev); 
-						var rey = (a + b) * Math.sin(rev) - b * Math.sin((a / b + 1)*rev);
-
-						var i = interp - 2;
-						x = (1 - i) * ex + i * rex;
-						y = (1 - i) * ey + i * rey;
-
-						if (interp < 2.5) {
-							gridmode = GridMode.EPICYCLOID;
-							reversed = false;
-						}
-						else {
-							gridmode = GridMode.REVERSEEPIC;
-							reversed = true;
-						}
-					} 
-					else { // rev epi and hyp
-						var a = freq/1024 * 200;
-						var b = a / 7;
-						var rev = 1024 -freq;
-						var rex = (a + b) * Math.cos(rev) - b * Math.cos((a / b + 1)*rev); 
-						var rey = (a + b) * Math.sin(rev) - b * Math.sin((a / b + 1)*rev);
-
-						var c = 150;
-						var hx = (a - b) * Math.cos(freq) - c * Math.cos((a / b - 1)*freq);
-						var hy = (a - b) * Math.sin(freq) - c * Math.sin((a / b - 1)*freq);
-
-						var i = interp - 3;
-						x = (1 - i) * rex + i * hx;
-						y = (1 - i) * rey + i * hy;
-
-						if (interp < 3.5) {
-							gridmode = GridMode.REVERSEEPIC;
-							reversed = true;
-						}
-						else {
-							gridmode = GridMode.HYPOTROCHOID;
-							reversed = false;
-						}
-					} 
-	
-					x = x * spacing + WIDTH/2;
-					y = y * spacing + HEIGHT/2;
-					
-					/*switch(gridmode) {
-						case GridMode.RIGID:
-							x = Math.floor(freq % GRID_WIDTH) * WIDTH/GRID_WIDTH + 10;
-							y = Math.floor(freq / GRID_WIDTH) * HEIGHT/GRID_HEIGHT + 10;
-							r = Math.abs(amp/SAMPLE_MAX) * 30;	
-						break;
-						case GridMode.CONCENTRIC:
-							x = WIDTH/2;
-							y = HEIGHT/2;
-							r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * WIDTH/4; 
-						break;
-						case GridMode.RANDOM:
-							x = Math.random() * WIDTH;
-							y = Math.random() * HEIGHT;
-							r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * 50; 
-						break;
-						case GridMode.SPIRAL:
-							x = 0.2 * spacing * freq * Math.cos(freq) + WIDTH/2; 
-							y =  0.2 * spacing * freq * Math.sin(freq) + HEIGHT/2;
-							r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * 50; 
-						break;
-						case GridMode.REVERSESPIRAL:
-							var rev = 1024 - freq;
-							x = 0.3 * rev * Math.cos(rev) + WIDTH/2; 
-							y =  0.3 * rev * Math.sin(rev) + HEIGHT/2;
-							r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * 50; 
-						break;
-						case GridMode.BUTTERFLY:
-							var cosf = Math.cos(freq);
-							var sinf12 = Math.sin(freq/12);
-							var ecosf = Math.pow(Math.E, cosf);
-							var mult = (ecosf - 2 * Math.cos(4 * freq) - Math.pow(sinf12, 5));
-
-							x = 70 * Math.sin(freq) * mult + WIDTH/2;
-							y = 50 * Math.cos(freq) * mult + HEIGHT/2;
-							r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * 50; 
-						break;
-						case GridMode.ASTROID:
-							x = 300 *(freq/1024)* Math.pow(Math.cos(freq), 3) + WIDTH/2 ;
-							y = 240 *(freq/1024)* Math.pow(Math.sin(freq), 3) + HEIGHT/2;
-							r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * 50; 
-						break;
-						case GridMode.EPICYCLOID:
-							var a = freq/1024 * 200;
-							var rev = 1024 - freq;
-							var b = a/7; 
-							var revx =  (a + b) * Math.cos(rev) - b * Math.cos((a / b + 1)*rev);
-							var revy =  (a + b) * Math.sin(rev) - b * Math.sin((a / b + 1)*rev);
+						if (interp <= 1) {	
+							var sx = 0.2 * freq * Math.cos(freq); 
+							var sy = 0.2 * freq * Math.sin(freq); 
 							
-							x = (1- interp) * (a + b) * Math.cos(freq) - b * Math.cos((a / b + 1)*freq) +
-							    interp * revx + WIDTH/2;
-							y = (1- interp) * (a + b) * Math.sin(freq) - b * Math.sin((a / b + 1)*freq) + 
-							    interp * revy + HEIGHT/2;
-							r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * 50; 
-						break;
-						case GridMode.REVERSEEPIC:
 							var rev = 1024 - freq;
-							var a = rev/1024 * 200;
-							var b = a/7; 
-							var c = 100;
-							x = (a + b) * Math.cos(rev) - b * Math.cos((a / b + 1)*rev) + WIDTH/2;
-							y = (a + b) * Math.sin(rev) - b * Math.sin((a / b + 1)*rev) + HEIGHT/2;
-							r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * 50; 
-						break;
-						case GridMode.HYPOTROCHOID:
+							var rx =  0.3 * rev * Math.cos(rev);
+							var ry =  0.3 * rev * Math.sin(rev);
+
+							x = (1 - interp) * sx + interp * rx;
+							y = (1 - interp) * sy + interp * ry;
+							
+							if (interp < 0.5) {
+								gridmode = GridMode.SPIRAL;
+								reversed = false;
+							}
+							else {
+								gridmode = GridMode.REVERSESPIRAL;
+								reversed = true;
+							}
+						}
+						else if (interp <= 2) { // rev spiral and epicycloid
+							var rev = 1024 - freq;
+							var rx =  0.3 * rev * Math.cos(rev);
+							var ry =  0.3 * rev * Math.sin(rev);
+
 							var a = freq/1024 * 200;
-							var b = a/7; 
+							var b = a / 7;
+							var ex = (a + b) * Math.cos(freq) - b * Math.cos((a / b + 1)*freq); 
+							var ey = (a + b) * Math.sin(freq) - b * Math.sin((a / b + 1)*freq);
+
+							var i = interp - 1;
+							x = (1 - i) * rx + i * ex;
+							y = (1 - i) * ry + i * ey;
+							
+							if (interp < 1.5) {
+								gridmode = GridMode.REVERSESPIRAL;
+								reversed = true;
+							}
+							else {
+								gridmode = GridMode.EPICYCLOID;
+								reversed = false;
+							}
+						} 
+						else if (interp <= 3) { // epicycloid and reverse epi
+							var rev = 1024 - freq;
+							var a = freq/1024 * 200;
+							var b = a / 7;
+							var ex = (a + b) * Math.cos(freq) - b * Math.cos((a / b + 1)*freq); 
+							var ey = (a + b) * Math.sin(freq) - b * Math.sin((a / b + 1)*freq);
+
+							var rex = (a + b) * Math.cos(rev) - b * Math.cos((a / b + 1)*rev); 
+							var rey = (a + b) * Math.sin(rev) - b * Math.sin((a / b + 1)*rev);
+
+							var i = interp - 2;
+							x = (1 - i) * ex + i * rex;
+							y = (1 - i) * ey + i * rey;
+
+							if (interp < 2.5) {
+								gridmode = GridMode.EPICYCLOID;
+								reversed = false;
+							}
+							else {
+								gridmode = GridMode.REVERSEEPIC;
+								reversed = true;
+							}
+						} 
+						else { // rev epi and hyp
+							var a = freq/1024 * 200;
+							var b = a / 7;
+							var rev = 1024 -freq;
+							var rex = (a + b) * Math.cos(rev) - b * Math.cos((a / b + 1)*rev); 
+							var rey = (a + b) * Math.sin(rev) - b * Math.sin((a / b + 1)*rev);
+
 							var c = 150;
-							x = (a - b) * Math.cos(freq) - c * Math.cos((a / b - 1)*freq) + WIDTH/2;
-							y = (a - b) * Math.sin(freq) - c * Math.sin((a / b - 1)*freq) + HEIGHT/2;
-							r = Math.abs(Math.pow(amp/SAMPLE_MAX, 2)) * 50; 
-						break;
-						default:
-							x = Math.floor(freq % GRID_WIDTH) * WIDTH/GRID_WIDTH + 10;
-							y = Math.floor(freq / GRID_WIDTH) * HEIGHT/GRID_HEIGHT + 10;
-							r = Math.abs(amp/SAMPLE_MAX) * 30;	
-					}*/
+							var hx = (a - b) * Math.cos(freq) - c * Math.cos((a / b - 1)*freq);
+							var hy = (a - b) * Math.sin(freq) - c * Math.sin((a / b - 1)*freq);
 
-					
-					var lastamp = lastAmps[freq];
-					var delta = (lastamp - amp);
-					
-					switch (colormode) {
-						case ColorMode.MONOCHROME:
-							ctxt.fillStyle = 'rgba(0, 255, 0,' + r/30 * 0.9 + ')';
-						break;					
-						case ColorMode.TWOTONE:
-							if (delta > 1) {
-								ctxt.fillStyle = 'rgba(0 ,0, 255,' + r/30 * 0.9 + ')';
+							var i = interp - 3;
+							x = (1 - i) * rex + i * hx;
+							y = (1 - i) * rey + i * hy;
+
+							if (interp < 3.5) {
+								gridmode = GridMode.REVERSEEPIC;
+								reversed = true;
 							}
 							else {
-								ctxt.fillStyle = 'rgba(0, 255, 0,' + r/30 * 0.9 + ')';
+								gridmode = GridMode.HYPOTROCHOID;
+								reversed = false;
 							}
-						break;					
-						case ColorMode.THREETONE:
-							if (delta > 1) {
-								ctxt.fillStyle= "rgba(" + color1[0] + "," + color1[1] 
-										+ "," + color1[2] + "," + r/30 * 0.9 + ")";
-							}
-							else if (delta < -1) {
-								ctxt.fillStyle= "rgba(" + color2[0] + "," + color2[1] 
-										+ "," + color2[2] + "," + r/30 * 0.9 + ")";
-							}
-							else {
-								ctxt.fillStyle= "rgba(" + color3[0] + "," + color3[1] 
-										+ "," + color3[2] + "," + r/30 *0.9 + ")";
-							}
-						break;					
-						case ColorMode.GRADIENT:
-							ctxt.fillStyle = 'rgba(' + + ' , ' +  +  ' , ' + +  ' , ' + r/30 * 0.9 + ')';
-						break;
-						case ColorMode.RANDOM:
-							var red = Math.random() * 255;
-							var green= Math.random() * 255;
-							var blue = Math.random() * 255;
-							var a = r/30 * 0.9;	
-							ctxt.fillStyle = 'rgba('+ red + ','+ green + ',' + blue + ',' + r/30 * 0.9 + ')';
-							break;	
-						default:
-							ctxt.fillStyle = 'rgba(0, 255, 0,' + r/30 * 0.9 + ')';
-					}
 
-					switch (shapemode) {
-						case ShapeMode.CIRCLE:
-							ctxt.beginPath();
-							ctxt.arc(x, y, r, 0, Math.PI * 2);
-							ctxt.fill();
-						break;	
-						case ShapeMode.SQUARE:
-							ctxt.beginPath();
-							ctxt.rotate(frame % 2 * Math.PI);
-							ctxt.rect(x - r, y-r, r * 2, r * 2);
-							ctxt.fill();
-						break;	
-						case ShapeMode.SKEW:
-							ctxt.beginPath();
-							ctxt.arc(x, y, r, 0, Math.PI * 2);
-							ctxt.fill();
-						break;	
-						default:
-							ctxt.beginPath();
-							ctxt.arc(x, y, r, 0, Math.PI * 2);
-							ctxt.fill();
+						}
+						 
+		
+						x = x * spacing + WIDTH/2;
+						y = y * spacing + HEIGHT/2;
+						
+						var lastamp = lastAmps[freq];
+						var delta = (lastamp - amp);
+						
+						// determine colors
+						if (delta > 1) {
+							ctxt.fillStyle= "rgba(" + color1[0] + "," + color1[1] 
+									+ "," + color1[2] + "," + r/30 * 0.9 + ")";
+						}
+						else if (delta < -1) {
+							ctxt.fillStyle= "rgba(" + color2[0] + "," + color2[1] 
+									+ "," + color2[2] + "," + r/30 * 0.9 + ")";
+						}
+						else {
+							ctxt.fillStyle= "rgba(" + color3[0] + "," + color3[1] 
+									+ "," + color3[2] + "," + r/30 *0.9 + ")";
+						}
+					
+						// draw shape
+						ctxt.beginPath();
+						ctxt.arc(x, y, r, 0, Math.PI * 2);
+						ctxt.fill();
+					
 					}
 				}
 
@@ -874,6 +745,17 @@
 				}
 			});
 
+			$("#pause").click(function(){
+				if (paused) {
+					audioSource.start();
+					paused = false;
+				}
+				else {
+					audioSource.stop();	
+					paused = true;
+				}
+			});
+
 			$("#penimage").click(function(){
 				switch(drawmode){
 					case DrawMode.PEN:
@@ -1066,9 +948,12 @@
 		<!--</div>-->
 		<div id="menucontainer" class = "container">
 			<div id="menu" class="row">
-				<div class="col-md-2 col-md-offset-2">
+				<div class="col-md-2 col-md-offset-1">
 					<div id="wavedistortion" class="slider" ></div>
 					<div id="playbackspeed" class="slider" ></div>
+				</div>
+				<div class="col-md-2">
+					<img id="pause" src = "images/pause.png"></image>
 				</div>
 				<div class="col-md-2">
 					<image id="penimage" src="images/pen.png"></image> 

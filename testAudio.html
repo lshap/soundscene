@@ -1,0 +1,65 @@
+<html>
+	<head>
+		<script src="js/jquery-1.11.0.min.js"></script>
+	</head>
+	<body>
+		<script>
+			
+				var audioContext;
+				try {
+					// Fix up for prefixing
+					window.AudioContext = window.AudioContext
+							      ||window.webkitAudioContext;
+					 audioContext = new AudioContext();
+				}
+				 catch(e) {
+					alert('Web Audio API is not supported in this browser');
+				}
+
+				$(document).ready(function(){
+						var impulseResponseBuffer = null;
+						var songbuffer = null;
+						var source;
+						console.log(window);
+					$("#oscillator").click(function(){
+						var convolver = audioContext.createConvolver();
+						convolver.buffer = impulseResponseBuffer;
+						source.connect(convolver);
+						convolver.connect(audioContext.destination);
+					});
+					$("#sound1").change(function(evt){
+						var file = evt.target.files[0];
+						var reader = new FileReader();
+						reader.onload = function(e) {
+							impulseResponseBuffer = audioContext.createBuffer(e.target.result, false);
+							var convolvesource = audioContext.createBufferSource();
+							convolvesource.buffer = impulseResponseBuffer;
+							//convolvesource.connect(audioContext.destination);
+							//convolvesource.start(0);
+						}				
+				
+						reader.readAsArrayBuffer(file);
+					});
+
+					$("#sound2").change(function(evt){
+						var file = evt.target.files[0];
+						console.log(evt);
+						var reader2 = new FileReader();
+						reader2.onload = function(e) {
+							console.log(e);
+							songbuffer = e.target.result;
+							source = audioContext.createBufferSource();
+							source.buffer =	audioContext.createBuffer(songbuffer, false);
+							source.connect(audioContext.destination);
+							source.start(0);
+						}				
+				
+						reader2.readAsArrayBuffer(file);
+					});
+				});
+		</script>
+		<button id="oscillator">oscillator</button>
+		<input id="sound1" type="file" name="sound1"/>
+		<input id="sound2" type="file" name="sound2"/>
+	</body>
+</html>

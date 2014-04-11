@@ -558,6 +558,13 @@
 					loadSound(data);
 				}
 			}
+
+
+			function drawConvolver() {
+				if (currconvolve > -1) {
+				
+				}	
+			}
 		
 			function applyEffects() {
 				audioSource.disconnect(0);
@@ -567,8 +574,7 @@
 				//audioSource.connect(waveshaper);			
 
 
-				console.log('convovler in apply effects = ');
-				console.log(convolver);
+				var source = audioSource; // save state
 				if (currconvolve >=0 ) {
 					audioSource.connect(convolvers[currconvolve]);
 					convolvers[currconvolve].connect(audioContext.destination);
@@ -577,7 +583,6 @@
 
 				$("#info").hide();
 
-				var source = audioSource; // save state
 					
 				// add filters
 				for (var i = 0; i < filters.length; i++) {
@@ -586,11 +591,6 @@
 					audioSource = filter;	
 				}
 
-				/*if (convolver) {
-					console.log('connct convolve');
-					audioSource.connect(convolver);
-					convolver.connect(audioContext.destination);
-				}*/	
 
 				//gainnode.connect(audioContext.destination);
 				//audioSource.connect(gainnode);	
@@ -748,6 +748,28 @@
 			$("#uploadimage").mouseout(function() {
 				var im = document.getElementById("uploadimage");
 				im.src="images/upload.png";
+			});
+
+			$("#preloadimage").click(function() {
+				var request = new XMLHttpRequest();
+				request.open("GET", 'music/suchgreatheights.mp3', true);
+				request.responseType = "arraybuffer";
+
+				request.onload = function() {
+					playSound(request.response, 0);	
+				};
+
+				request.send();
+			});
+
+			$("#preloadimage").mouseover(function() {
+				var im = document.getElementById("preloadimage");
+				im.src="images/preload-selected.png";
+			});
+
+			$("#preloadimage").mouseout(function() {
+				var im = document.getElementById("preloadimage");
+				im.src="images/preload.png";
 			});
 
 			$("#linkimage").mouseover(function() {
@@ -1022,8 +1044,9 @@
 		<div id="dragDiv" class="row" ondragover="allowDrop(event)" ondrop="drop(event)">
 			<!--<image id="playIm" src="images/draganddroppurple.png"/>-->
 			<input id="filepicker" type="file" accept=".mp3"/>
-			<!--<img id="linkimage" src="images/link.png"></img>
-			<span id="OR">OR</span>-->
+			<!--<img id="linkimage" src="images/link.png"></img>-->
+			<img id="preloadimage" src="images/preload.png"></img>
+			<span id="OR">OR</span>
 			<img id="uploadimage" src="images/upload.png"></img>
 			<input type="text" id="urlInput"/>
 		</div>
@@ -1059,7 +1082,7 @@
 		<div id="information">
 		<span><span style="font-weight:bold">Welcome to Sound Sketch!</span> Upload an mp3 (by clicking on the upload icon) to begin an interactive
 		      music experience. Your sound will provide the visual base for your
-		      sketch, and by playing around with the visuals you will alter your sound!
+		      sketch, and by playing around with the visuals you will alter your sound! Learn more on the <a href ="#">about</a> page.
 			<br></br>
 		      <span style="font-weight:bold">Hint</span>: once the visualization appears, move your mouse to the bottom of the screen to view your controls. </span>
 		</div>

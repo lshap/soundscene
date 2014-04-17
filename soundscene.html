@@ -92,6 +92,7 @@
 			var oscillators = [];
 			var reversed = false;
 			var whiteNoise;
+			var linefilter;
 
 			var convolvers = [];
 			var currconvolve = -1;
@@ -616,8 +617,8 @@
 			 	audioSource = source; // restore state
 			}
 
-			function addNoise() {
-				var bufferSize = 2 * audioContext.sampleRate,
+			function addNoise(x, y) {
+				/*var bufferSize = 2 * audioContext.sampleRate,
    	 			noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate),
     				output = noiseBuffer.getChannelData(0);
 
@@ -627,9 +628,48 @@
 
 				whiteNoise = audioContext.createBufferSource();
 				whiteNoise.loop = true;
-				whiteNoise.buffer = noiseBuffer;
+				whiteNoise.buffer = noiseBuffer;*/
+				whiteNoise = audioContext.createOscillator();
+				whiteNoise.type = 'sine';
+				
+				linefilter = audioContext.createBiquadFilter();
+				linefilter.type = linefilter.LOWPASS;
+				linefilter.frequency.value = getNoiseFilterVal(x, y);
+				whiteNoise.connect(linefilter);
+				linefilter.connect(audioContext.destination);
 			}
 		
+
+			function getNoiseFilterVal(x, y) {
+					var freq;
+						
+					if (reversed == false)  {
+						var a = (x - WIDTH/2)/(0.2 * spacing); // freq * cos(freq)
+						var b = (y - HEIGHT/2)/(0.2 * spacing); // freq * sin(freq)
+						var f = Math.atan(b/a);
+					
+						if (a < 0 && Math.cos(f) > 0) {
+							f += Math.PI;
+						}
+
+						freq = Math.min(1024, a / Math.cos(f));	
+						}
+					else {
+						var a = (newfilter.x - WIDTH/2)/(0.3 * spacing);
+						var b = (newfilter.y - HEIGHT/2)/(0.3 * spacing);
+						var rf = Math.atan(b/a);
+						
+						if (a < 0 && Math.cos(rf) > 0) {
+							rf += Math.PI;
+						}	
+
+						var rev = Math.min(1024, a/Math.cos(rf));
+						freq = 1024 - rev;
+					}
+
+					return freq;
+			}
+
 			function addFilter(newfilter) {
 				if (newfilter.r > 0) {	
 					var filter = audioContext.createBiquadFilter();
@@ -742,7 +782,7 @@
 			});
 
 			$("#menucontainer").mouseout(function (event) {
-				//$("#menu").hide();
+				$("#menu").hide();
 			});
 
 
@@ -929,34 +969,24 @@
 				mousedowny = event.pageY;
 				var d = new Date();
 				clicktime = d.getTime();
+				var offsetX = $(this).offset().left;
+				var offsetY = $(this).offset().top;
 
 				if (drawmode == DrawMode.PEN) {
 					drawing = true;
 					var nextline = [];
 					noiseLines.push(nextline);					
 	
-					addNoise();
-					whiteNoise.connect(audioContext.destination);		
-
-					var whiteNoiseAnalyser = audioContext.createAnalyser();
-					
-					whiteNoiseAnalyser.connect(audioContext.destination);
-					whiteNoise.connect(whiteNoiseAnalyser);
-
+					var px = event.pageX - offsetX;
+					var py = event.pageY - offsetY
+					addNoise(px, py);
 					whiteNoise.start(0);
-
-					var whiteNoisefreqDomain = new Float32Array(whiteNoiseAnalyser.frequencyBinCount);
-					whiteNoiseAnalyser.getByteTimeDomainData(whiteNoisefreqDomain);
-					console.log(whiteNoisefreqDomain);
 				}
 
 				else if (drawmode == DrawMode.FILTER){
 					drawingFilter = true;
 					var filter = {x: 0, y:0, r:0};
 
-					var offsetX = $(this).offset().left;
-					var offsetY = $(this).offset().top;
-						
 					filter.x = event.pageX - offsetX;
 					filter.y = event.pageY - offsetY;	
 					filterShapes.push(filter);
@@ -984,14 +1014,9 @@
 					
 					var px = event.pageX - offsetX;
 					var py = event.pageY - offsetY
-					var nextpt = {x: event.pageX - offsetX, y:event.pageY - offsetY};
+					var nextpt = {x: px, y:py};
 					line.push(nextpt);
-					var linefilter = audioContext.createBiquadFilter();
-					linefilter.type = linefilter.LOWPASS;
-					
-					linefilter.frequency.value = 1024;
-
-					//whiteNoise.connect(linefilter);
+					whiteNoise.frequency.value = getNoiseFilterVal(px, py);
 				}
 
 				else if (drawingFilter && drawmode == DrawMode.FILTER) {

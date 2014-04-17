@@ -130,32 +130,37 @@ body {
 }
 .buttons {
 	display:inline;
+	width:220px;
+	padding-left:0px;
+	padding-right:0px;
 }
 
 #pause {
 	margin-top:50px;
-	width:60px;
-	height:60px;
-	position:relative;
+	width:45px;
+	height:45px;
 }
 #penimage {
 //	position:relative;
 	margin-top:50px;
-	width:60px;
-	height:60px;
-//	padding-left: 15%;
+	width:45px;
+	height:45px;
+	margin-left:10px;
+//	margin-left: 15%;
 }
 
 #filterimage {
 //	position:relative;
 	margin-top:50px;
-	width:60px;
-	height:60px;
+	width:45px;
+	margin-left:10px;
+	height:45px;
 }
 
 #wheelcanvas {
 //	position:relative;
 	margin-top:25px;
+	margin-left:0px;
 //	margin-left:10%;
 }
 
@@ -197,4 +202,5 @@ body {
 .tiny {
 	width:40px;
 }
+
 

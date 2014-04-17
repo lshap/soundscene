@@ -9,7 +9,7 @@
 		<script src="js/ColorWheel.js"></script>
 		<script src="http://connect.soundcloud.com/sdk.js"></script>
 		<link rel='stylesheet' href='bootstrap.css'>
-		<link rel='stylesheet' href='jquery-ui-1.10.4.custom.min.css'>
+		<link rel='stylesheet' href='jquery-ui-1.10.4.custom.css'>
 		<script type="text/javascript">
 
 			// init sound cloud api
@@ -875,31 +875,31 @@
 				if (paused) {
 					playSound(soundbuffer, pausetime);
 					paused = false;
-					this.src = "images/pause.png";
+					this.src = "images/pauseBtn.png";
 				}
 				else {
 					audioSource.stop();	
 					paused = true;
 					pausetime = audioContext.currentTime;
-					this.src = "images/play.png";
+					this.src = "images/pauseBtn_selected.png";
 				}
 			});
 
 			$("#penimage").click(function(){
 				switch(drawmode){
 					case DrawMode.PEN:
-						this.src = "images/pen.png"
+						this.src = "images/pencilBtn.png"
 						drawmode = DrawMode.NONE;
 					break;
 					case DrawMode.NONE:
-						this.src = "images/pen_selected.png"
+						this.src = "images/pencilBtn_selected.png"
 						drawmode = DrawMode.PEN;
 					break;
 					case DrawMode.FILTER:
 						var filt = $($("#filterimage"))[0];
-						filt.src = "images/filter.png";
+						filt.src = "images/filterBtn.png";
 
-						this.src = "images/pen_selected.png"
+						this.src = "images/pencilBtn_selected.png"
 						drawmode = DrawMode.PEN;
 					default:
 				}
@@ -908,17 +908,17 @@
 			$("#filterimage").click(function(){
 				switch(drawmode){
 					case DrawMode.FILTER:
-						this.src = "images/filter.png"
+						this.src = "images/filterBtn.png"
 						drawmode = DrawMode.NONE;
 					break;
 					case DrawMode.NONE:
-						this.src = "images/filter_selected.png"
+						this.src = "images/filterBtn_selected.png"
 						drawmode = DrawMode.FILTER;
 					break;
 					case DrawMode.PEN:
 						var pen = $($("#penimage"))[0];
-						pen.src = "images/pen.png";
-						this.src = "images/filter_selected.png"
+						pen.src = "images/pencilBtn.png";
+						this.src = "images/filterBtn_selected.png"
 						drawmode = DrawMode.FILTER;
 					default:
 				}
@@ -946,8 +946,8 @@
 					whiteNoise.start(0);
 
 					var whiteNoisefreqDomain = new Float32Array(whiteNoiseAnalyser.frequencyBinCount);
-					whiteNoiseAnalyser.getTimeDomainData(whiteNoisefreqDomain);
-					//console.log(whiteNoisefreqDomain);
+					whiteNoiseAnalyser.getByteTimeDomainData(whiteNoisefreqDomain);
+					console.log(whiteNoisefreqDomain);
 				}
 
 				else if (drawmode == DrawMode.FILTER){
@@ -1081,7 +1081,7 @@
 		<!--<input id="convolve" type="file" accept=".wav"/>-->
 		<canvas id="backgroundcanvas"></canvas>
 		<span id="header">SOUND SKETCH</span> 
-		<img id="colorwheel" src="images/colorwheel.png"></img>	
+		<img id="colorwheel" src="images/colorwheelsmall.png"></img>	
 		<div id="dragDiv" class="row" ondragover="allowDrop(event)" ondrop="drop(event)">
 			<!--<image id="playIm" src="images/draganddroppurple.png"/>-->
 			<input id="filepicker" type="file" accept=".mp3"/>
@@ -1098,21 +1098,15 @@
 				<button type = "back" id="backBtn">back</button>
 		<!--</div>-->
 		<div id="menucontainer" class = "container">
-			<div id="menu" class="row">
-				<div class="col-md-2 col-md-offset-1">
+			<div id="menu" class="row buttons">
+				<div class="col-md-2 col-md-offset-3">
 					<div class="row"><!--<img src="images/convolve.png" class="tiny"/>--><div id="wavedistortion" class="slider" ></div></div>
 					<div class="row"><!--<img src="images/playback.png" class="tiny"/>--><div id="playbackspeed" class="slider" ></div></div>
 				</div>
-				<div class="col-md-2">
-					<img id="pause" src = "images/pause.png"></image>
-				</div>
-				<div class="col-md-2">
-					<image id="penimage" src="images/pen.png"></image> 
-				</div>
-				<div class="col-md-2">
-					<image id="filterimage" src="images/filter.png"></image>
-				</div>
-				<div class="col-md-2">
+				<img id="pause" src = "images/pauseBtn.png"></image>
+				<image id="penimage" src="images/pencilBtn.png"></image> 
+				<image id="filterimage" src="images/filterBtn.png"></image>
+				<div class="col-md-2 wheeldiv">
 					<canvas id="wheelcanvas"></canvas>
 				</div>
 			</div>

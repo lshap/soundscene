@@ -128,22 +128,29 @@ body {
 	margin-top:0px;
 	//margin-left:100px;
 }
+.buttons {
+	display:inline;
+}
+
 #pause {
-	margin-top:40px;
-	width:75px;
-	height:75px;
+	margin-top:50px;
+	width:60px;
+	height:60px;
+	position:relative;
 }
 #penimage {
 //	position:relative;
-	margin-top:35px;
-	margin-bottom:100px; 
+	margin-top:50px;
+	width:60px;
+	height:60px;
 //	padding-left: 15%;
 }
 
 #filterimage {
 //	position:relative;
-	margin-top:30px;
-	margin-bottom:100px; 
+	margin-top:50px;
+	width:60px;
+	height:60px;
 }
 
 #wheelcanvas {
@@ -163,6 +170,7 @@ body {
 	position:relative;
 	width:150px;
 }
+
 
 #wavedistoriton {
 	padding-top:100px;
@@ -189,3 +197,4 @@ body {
 .tiny {
 	width:40px;
 }
+

@@ -92,7 +92,6 @@
 			var oscillators = [];
 			var reversed = false;
 			var whiteNoise;
-			var deletedFilter = false;
 
 			var convolvers = [];
 			var currconvolve = -1;
@@ -101,6 +100,8 @@
 	
 			var mousedownx;
 			var mousedowny;
+			var clicktime;
+			var mousedownID = -1;
 				
 			var sceneDisplayed = false;			
 			var drawing = false;
@@ -926,6 +927,8 @@
 			$("#canvas").mousedown(function (event) {
 				mousedownx = event.pageX;
 				mousedowny = event.pageY;
+				var d = new Date();
+				clicktime = d.getTime();
 
 				if (drawmode == DrawMode.PEN) {
 					drawing = true;
@@ -957,9 +960,21 @@
 					filter.x = event.pageX - offsetX;
 					filter.y = event.pageY - offsetY;	
 					filterShapes.push(filter);
+					if (mousedownID == -1) {
+						mousedownID = setInterval(whilemousedown, 100);
+					}
 				}
 
 			});
+
+
+			function whilemousedown() {
+				var d = new Date();
+				var deltaT = d.getTime() - clicktime; 	
+				var r = Math.max(0, deltaT/10);
+				var newfilter = filterShapes[filterShapes.length -1];
+				newfilter.r = r;
+			}
 
 			$("canvas").mousemove(function (event) {
 				var offsetX = $(this).offset().left;
@@ -981,7 +996,9 @@
 
 				else if (drawingFilter && drawmode == DrawMode.FILTER) {
 					var filter = filterShapes[filterShapes.length - 1];
-					var r = Math.max(0, event.pageX - offsetX - filter.x);
+					var d = new Date();
+					var deltaT = d.getTime() - clicktime; 	
+					var r = Math.max(0, deltaT/10);
 					filter.r = r;		
 				}
 			});	
@@ -989,36 +1006,48 @@
 			
 			$("#canvas").mouseup(function (event) {
 				var dist = Math.sqrt(Math.pow(event.pageX - mousedownx, 2) + Math.pow(event.pageY - mousedowny, 2));
-			
-				if (dist < 0.001) {
-					if (drawmode == DrawMode.FILTER) {
-						filterShapes.splice(filterShapes.length - 1, 1); 
-						drawingFilter = false;
+
+				if (drawmode == DrawMode.FILTER) {
+					drawingFilter = false;
+					// clear mousedown
+					if (mousedownID != -1) {
+						clearInterval(mousedownID);
+						mousedownID = -1;
+					}
+					// add a sound filter
+					if (filterShapes.length > 0) {
+						var newfilter = filterShapes[filterShapes.length - 1];
+						if (newfilter.r < 1) {
+							filterShapes.splice(filterShapes.length - 1, 1);
+						}
+
+						addFilter(newfilter);
 					}
 
-					else if (drawmode == DrawMode.PEN) {
-						noiseLines.splice(noiseLines.length - 1, 1); 
-						whiteNoise.stop();
-						drawing = false;
-					}
+					var d = new Date();
+					var deltaT = d.getTime() - clicktime;
 
-					var offsetX = $(this).offset().left;
-					var offsetY = $(this).offset().top;
+					if (deltaT < 100) {
+						var offsetX = $(this).offset().left;
+						var offsetY = $(this).offset().top;
 
-					for (var i = 0; i < filterShapes.length; i++) {
-						var nextfilter = filterShapes[i];
-						var xc = nextfilter.x;
-						var yc = nextfilter.y;
-						var x = event.pageX - offsetX;
-						var y = event.pageY - offsetY;
+						// check to see if we need to remove a filter
+						for (var i = 0; i < filterShapes.length; i++) {
+							var nextfilter = filterShapes[i];
+							var xc = nextfilter.x;
+							var yc = nextfilter.y;
+							var x = event.pageX - offsetX;
+							var y = event.pageY - offsetY;
 
-						if (Math.sqrt(Math.pow(xc - x, 2) + Math.pow(yc - y, 2)) < nextfilter.r) {
-							filterShapes.splice(i, 1); // remove this filter
-							console.log('removed filter shape at position ' + i);
-							filters.splice(i, 1);
-							console.log('removed filter at position ' + i);
-							applyEffects();
-							break;
+							if (Math.sqrt(Math.pow(xc - x, 2) + Math.pow(yc - y, 2)) 
+							    < nextfilter.r) {
+								filterShapes.splice(i, 1); // remove this filter
+								console.log('removed filter shape at position ' + i);
+								filters.splice(i, 1);
+								console.log('removed filter at position ' + i);
+								applyEffects();
+								break;
+							}
 						}
 					}
 				}
@@ -1032,17 +1061,6 @@
 						whiteNoise.stop();
 					}
 					
-				}
-				else if (drawmode == DrawMode.FILTER) {
-					drawingFilter = false;
-
-					// add a sound filter
-					if (filterShapes.length > 0) {
-						var newfilter = filterShapes[filterShapes.length - 1];
-						addFilter(newfilter);	
-					}
-
-					deletedFilter = false;
 				}
 				
 			})

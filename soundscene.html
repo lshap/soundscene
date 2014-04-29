@@ -8,7 +8,8 @@
 		<script src="js/jquery-ui-1.10.4.custom.min.js"></script>
 		<script src="js/ColorWheel.js"></script>
 		<script src="http://connect.soundcloud.com/sdk.js"></script>
-		<link rel='stylesheet' href='bootstrap.css'>
+		<!--<link rel='stylesheet' href='bootstrap.css'>-->
+	<link rel='stylesheet' href='//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css'>
 		<link rel='stylesheet' href='jquery-ui-1.10.4.custom.css'>
 		<script type="text/javascript">
 
@@ -92,7 +93,6 @@
 			var oscillators = [];
 			var reversed = false;
 			var whiteNoise;
-			var linefilter;
 
 			var convolvers = [];
 			var currconvolve = -1;
@@ -502,7 +502,7 @@
 
 
 			function drawFilters() {
-				ctxt.fillStyle = 'rgba(255, 255, 255, 0.9)'; 
+				ctxt.fillStyle = 'rgba(255, 255, 255, 0.7)'; 
 				for (var i = 0; i < filterShapes.length; i++) {
 					// draw the filter
 					var nextfilter = filterShapes[i];
@@ -631,41 +631,22 @@
 				whiteNoise.buffer = noiseBuffer;*/
 				whiteNoise = audioContext.createOscillator();
 				whiteNoise.type = 'sine';
-				
-				linefilter = audioContext.createBiquadFilter();
-				linefilter.type = linefilter.LOWPASS;
-				linefilter.frequency.value = getNoiseFilterVal(x, y);
-				whiteNoise.connect(linefilter);
-				linefilter.connect(audioContext.destination);
+				whiteNoise.connect(audioContext.destination);
 			}
 		
 
 			function getNoiseFilterVal(x, y) {
 					var freq;
 						
-					if (reversed == false)  {
-						var a = (x - WIDTH/2)/(0.2 * spacing); // freq * cos(freq)
-						var b = (y - HEIGHT/2)/(0.2 * spacing); // freq * sin(freq)
-						var f = Math.atan(b/a);
+					var a = (x - WIDTH/2)/(0.2 * spacing); // freq * cos(freq)
+					var b = (y - HEIGHT/2)/(0.2 * spacing); // freq * sin(freq)
+					var f = Math.atan(b/a);
 					
-						if (a < 0 && Math.cos(f) > 0) {
-							f += Math.PI;
-						}
-
-						freq = Math.min(1024, a / Math.cos(f));	
-						}
-					else {
-						var a = (newfilter.x - WIDTH/2)/(0.3 * spacing);
-						var b = (newfilter.y - HEIGHT/2)/(0.3 * spacing);
-						var rf = Math.atan(b/a);
-						
-						if (a < 0 && Math.cos(rf) > 0) {
-							rf += Math.PI;
-						}	
-
-						var rev = Math.min(1024, a/Math.cos(rf));
-						freq = 1024 - rev;
+					if (a < 0 && Math.cos(f) > 0) {
+						f += Math.PI;
 					}
+
+					freq = Math.min(1024, a / Math.cos(f));	
 
 					return freq;
 			}

@@ -152,6 +152,7 @@
 				$("#colorwheel").hide();
 				$("#filepicker").hide();
 				$("#urlInput").hide();
+				$("#home").hide();
 
 				$("#information").hide();
 				$("#overlay").hide();
@@ -897,12 +898,14 @@
 					playSound(soundbuffer, pausetime);
 					paused = false;
 					this.src = "images/pauseBtn.png";
+					$("#home").hide();
 				}
 				else {
 					audioSource.stop();	
 					paused = true;
 					pausetime = audioContext.currentTime;
 					this.src = "images/pauseBtn_selected.png";
+					$("#home").show();
 				}
 			});
 
@@ -945,6 +948,12 @@
 				}
 				console.log("drawmode = " + drawmode);
 			});
+
+
+			$("#home").click(function() {
+				window.location.reload();
+			});
+
 			$("#canvas").mousedown(function (event) {
 				mousedownx = event.pageX;
 				mousedowny = event.pageY;
@@ -1122,6 +1131,7 @@
 		</div>
 		<div id="overlay"></div>
 		<img src="images/info.png" id="info"></img>
+		<img src="images/home.png" id="home"></img>
 		<div id="information">
 		<span><span style="font-weight:bold">Welcome to Sound Sketch!</span> Play with the sample sound or upload your own mp3 to begin an interactive
 		      music experience. Your sound will provide the visual base for your
